@@ -2,7 +2,7 @@ export function MapButton({ showMap, toggleMap }) {
   return (
     <button
       onClick={toggleMap}
-      className="bg-blue-500 rounded hover:bg-blue-600 inline-block mb-2"
+      className=" text-white font-medium py-2 px-4 rounded transition-colors"
     >
       {showMap ? 'Скрыть карту' : 'Показать карту'}
     </button>

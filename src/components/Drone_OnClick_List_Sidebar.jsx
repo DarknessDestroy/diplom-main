@@ -81,12 +81,22 @@ export function DroneModal({ drone, onClose }) {
 
             <div className="bg-gray-900 p-3 rounded">
               <div className="text-gray-400 text-sm mb-1">Скорость</div>
-              <div className="text-white font-bold text-lg">{drone.speed} м/с</div>
+              <div className={`font-bold text-lg ${drone.speed === 0 ? 'text-gray-400' : 'text-white'}`}>
+                {drone.speed} м/с
+              </div>
+              {drone.speed === 0 && drone.status === 'на земле' && (
+                <div className="text-gray-500 text-xs mt-1">Дрон на земле</div>
+              )}
             </div>
 
             <div className="bg-gray-900 p-3 rounded">
               <div className="text-gray-400 text-sm mb-1">Высота</div>
-              <div className="text-white font-bold text-lg">{drone.altitude} м</div>
+              <div className={`font-bold text-lg ${drone.altitude === 0 ? 'text-gray-400' : 'text-white'}`}>
+                {drone.altitude} м
+              </div>
+              {drone.altitude === 0 && drone.status === 'на земле' && (
+                <div className="text-gray-500 text-xs mt-1">Дрон на земле</div>
+              )}
             </div>
 
             <div className="bg-gray-900 p-3 rounded">

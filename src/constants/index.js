@@ -1,4 +1,3 @@
-// Данные дронов
 export const dronesData = [
   { id: 1, name: 'Дрон №1', battery: 85, speed: 15, altitude: 8, status: 'в полете' },
   { id: 2, name: 'Дрон №2', battery: 60, speed: 0, altitude: 0, status: 'на земле' },
@@ -10,10 +9,8 @@ export const dronesData = [
   { id: 8, name: 'Дрон №8', battery: 95, speed: 18, altitude: 4, status: 'в полете' },
 ];
 
-// Начальная позиция карты
 export const initialMapCenter = [55.755819, 37.617644];
 
-// Иконка дрона
 import L from 'leaflet';
 export const droneIcon = new L.Icon({
   iconUrl: 'ico.png',

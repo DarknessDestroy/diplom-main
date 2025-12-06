@@ -16,7 +16,7 @@ export function DroneCard({ drone, onClick }) {
   };
 
   const getBatteryWidth = (battery) => {
-    return `${Math.max(battery, 5)}%`; // Минимум 5% для видимости
+    return `${Math.max(battery, 5)}%`;
   };
 
   return (
@@ -53,11 +53,15 @@ export function DroneCard({ drone, onClick }) {
       <div className="grid grid-cols-2 gap-2 text-sm">
         <div className="bg-gray-900 p-2 rounded">
           <div className="text-gray-400">Скорость</div>
-          <div className="text-white font-medium">{drone.speed} м/с</div>
+          <div className={`font-medium ${drone.speed === 0 ? 'text-gray-400' : 'text-white'}`}>
+            {drone.speed} м/с
+          </div>
         </div>
         <div className="bg-gray-900 p-2 rounded">
           <div className="text-gray-400">Высота</div>
-          <div className="text-white font-medium">{drone.altitude} м</div>
+          <div className={`font-medium ${drone.altitude === 0 ? 'text-gray-400' : 'text-white'}`}>
+            {drone.altitude} м
+          </div>
         </div>
       </div>
 
@@ -65,6 +69,11 @@ export function DroneCard({ drone, onClick }) {
         <span className={`text-xs font-medium px-2 py-1 rounded-full ${getStatusColor(drone.status)}`}>
           {drone.status}
         </span>
+        {drone.status === 'на земле' && (
+          <span className="text-xs text-gray-400">
+            Скорость: {drone.speed} м/с, Высота: {drone.altitude} м
+          </span>
+        )}
       </div>
     </div>
   );
