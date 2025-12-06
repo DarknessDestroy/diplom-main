@@ -4,12 +4,13 @@ import { RouteControls } from './components/Route_Buttons';
 import { DroneMap } from './components/Map';
 import { Sidebar } from './components/Sidebar';
 import { WelcomeScreen } from './components/Welcome_Screen';
+import { LocationButton } from './components/Location_Button';
 import { dronesData, initialMapCenter } from './constants';
 import 'leaflet/dist/leaflet.css';
 
 function App() {
   const [hasStarted, setHasStarted] = useState(false);
-  const [drones, setDrones] = useState(() => 
+  const [drones, setDrones] = useState(() =>
     dronesData.map(drone => ({
       ...drone,
       position: null,
@@ -17,7 +18,7 @@ function App() {
       isVisible: false
     }))
   );
-  
+
   const [mapCenter, setMapCenter] = useState(initialMapCenter);
   const [selectedDrone, setSelectedDrone] = useState(null);
   const [showDroneControls, setShowDroneControls] = useState(true);
@@ -28,7 +29,7 @@ function App() {
     const visibleDrones = drones.filter(d => d.isVisible);
     if (visibleDrones.length > 0) {
       setDrones(prev =>
-        prev.map(d => 
+        prev.map(d =>
           d.id === visibleDrones[0].id ? { ...d, path: [...d.path, [latlng.lat, latlng.lng]] } : d
         )
       );
@@ -39,7 +40,7 @@ function App() {
     const visibleDrones = drones.filter(d => d.isVisible);
     if (visibleDrones.length > 0) {
       setDrones(prev =>
-        prev.map(d => 
+        prev.map(d =>
           d.id === visibleDrones[0].id ? { ...d, path: d.path.slice(0, -1) } : d
         )
       );
@@ -50,7 +51,7 @@ function App() {
     const visibleDrones = drones.filter(d => d.isVisible);
     if (visibleDrones.length > 0) {
       setDrones(prev =>
-        prev.map(d => 
+        prev.map(d =>
           d.id === visibleDrones[0].id ? { ...d, path: [] } : d
         )
       );
@@ -59,11 +60,11 @@ function App() {
 
   const handleDronePositionChange = (droneId, newPosition) => {
     console.log(`Дрон ${droneId} перемещен на:`, newPosition);
-    
+
     setDrones(prev =>
       prev.map(d => {
         if (d.id !== droneId) return d;
-        
+
         return {
           ...d,
           position: newPosition
@@ -74,22 +75,23 @@ function App() {
 
   const addDroneToMap = (droneId, position = null) => {
     const positionToSet = position || { lat: mapCenter[0], lng: mapCenter[1] };
-    
+
     setDrones(prev =>
       prev.map(d => {
         if (d.id !== droneId) return d;
-        
+
         return {
           ...d,
           position: positionToSet,
           isVisible: true,
-          status: 'на земле',  
-          speed: 0,            
-          altitude: 0          
+          battery: 100,
+          status: 'на земле',
+          speed: 0,
+          altitude: 0
         };
       })
     );
-    
+
     setSelectedDrone(null);
     console.log(`Дрон ${droneId} добавлен на карту со статусом "на земле"`);
   };
@@ -98,7 +100,7 @@ function App() {
     setDrones(prev =>
       prev.map(d => {
         if (d.id !== droneId) return d;
-        
+
         return {
           ...d,
           isVisible: false,
@@ -121,21 +123,6 @@ function App() {
   const handleStart = () => {
     setHasStarted(true);
     console.log('Приложение запущено, карта отображается');
-  };
-
-  const updateDroneStatus = (droneId, newStatus, speed = 0, altitude = 0) => {
-    setDrones(prev =>
-      prev.map(d => {
-        if (d.id !== droneId) return d;
-        
-        return {
-          ...d,
-          status: newStatus,
-          speed: speed,
-          altitude: altitude
-        };
-      })
-    );
   };
 
   return (
@@ -176,7 +163,7 @@ function App() {
                   )}
                 </button>
               </div>
-              
+
               {showDroneControls && (
                 <div className="bg-gray-800 p-3 rounded-lg border border-gray-700 mb-2">
                   <div className="flex flex-wrap gap-2 mb-3">
@@ -203,13 +190,10 @@ function App() {
                       </div>
                     ))}
                   </div>
-                  
+
                   {selectedDrone !== null && (
                     <div className="bg-yellow-900 p-2 rounded text-sm">
                       <p className="font-medium">Режим размещения: выберите место на карте для дрона</p>
-                      <p className="text-gray-300 text-xs mt-1">
-                        После размещения дрон будет иметь статус "на земле", скорость 0 м/с и высоту 0 м
-                      </p>
                       <button
                         onClick={() => setSelectedDrone(null)}
                         className="mt-1 bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-xs"
@@ -220,29 +204,38 @@ function App() {
                   )}
                 </div>
               )}
-              
+
               <div className="bg-gray-800 p-2 rounded text-sm mb-2">
                 <div className="flex justify-between">
                   <span>Всего дронов: {drones.length}</span>
-                  <span className={`font-medium ${
-                    drones.filter(d => d.isVisible).length > 0 ? 'text-green-400' : 'text-gray-400'
-                  }`}>
+                  <span className={`font-medium ${drones.filter(d => d.isVisible).length > 0 ? 'text-green-400' : 'text-gray-400'
+                    }`}>
                     На карте: {drones.filter(d => d.isVisible).length}
                   </span>
                 </div>
               </div>
-              
-              <RouteControls 
-                undoLastPoint={undoLastPoint} 
-                clearRoute={clearRoute} 
+
+              <RouteControls
+                undoLastPoint={undoLastPoint}
+                clearRoute={clearRoute}
                 disabled={drones.filter(d => d.isVisible).length === 0}
               />
-              <div className="w-full flex mb-2">
-                <SearchBox setMapCenter={setMapCenter} />
+
+              <div className="flex flex-col md:flex-row gap-2 mb-2 z-[1000]">
+                <div className="flex-1">
+                  <SearchBox setMapCenter={setMapCenter} />
+                </div>
+                <div>
+                  <LocationButton
+                    setMapCenter={setMapCenter}
+                    mapCenter={mapCenter}
+                  />
+                </div>
               </div>
-              <DroneMap 
+
+              <DroneMap
                 drones={drones.filter(d => d.isVisible)}
-                mapCenter={mapCenter} 
+                mapCenter={mapCenter}
                 addRoutePoint={selectedDrone ? handleMapClickForPlacement : addRoutePoint}
                 onDronePositionChange={handleDronePositionChange}
                 placementMode={selectedDrone !== null}
