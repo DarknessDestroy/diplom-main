@@ -6,7 +6,6 @@ export function SearchBox({ setMapCenter }) {
   const [isLoading, setIsLoading] = useState(false);
   const debounceTimer = useRef(null);
 
-  // Очистка таймера
   const clearTimer = () => {
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
@@ -14,7 +13,6 @@ export function SearchBox({ setMapCenter }) {
     }
   };
 
-  // Функция для поиска мест
   const performSearch = async (searchText) => {
     if (!searchText.trim()) {
       setResults([]);
@@ -35,25 +33,21 @@ export function SearchBox({ setMapCenter }) {
     }
   };
 
-  // Обработчик изменения input с debounce
   const handleInputChange = (e) => {
     const text = e.target.value;
     setQuery(text);
     
-    // Очищаем предыдущий таймер
     clearTimer();
     
-    // Устанавливаем новый таймер
     if (text.trim()) {
       debounceTimer.current = setTimeout(() => {
         performSearch(text);
-      }, 500); // Задержка 500мс
+      }, 500); 
     } else {
       setResults([]);
     }
   };
 
-  // Обработчик выбора места
   const handleSelect = (place) => {
     setQuery(place.display_name);
     setResults([]);
@@ -69,7 +63,6 @@ export function SearchBox({ setMapCenter }) {
     clearTimer();
   };
 
-  // Очистка при размонтировании
   useEffect(() => {
     return () => {
       clearTimer();

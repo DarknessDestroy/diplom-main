@@ -123,7 +123,6 @@ function App() {
     console.log('Приложение запущено, карта отображается');
   };
 
-  // Функция для изменения статуса дрона (для будущего расширения)
   const updateDroneStatus = (droneId, newStatus, speed = 0, altitude = 0) => {
     setDrones(prev =>
       prev.map(d => {

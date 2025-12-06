@@ -11,7 +11,6 @@ export function PositionButton({ drones, onSetPosition }) {
     }
   };
 
-  // Эта функция будет вызываться из Map.jsx при клике на карту в режиме установки позиции
   const handleMapClick = (latlng) => {
     if (isSettingPosition && selectedDrone) {
       onSetPosition(selectedDrone.id, latlng);
