@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { MapContainer, TileLayer, Polyline, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Polyline, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { DroneMarker } from './DroneMarker';
@@ -11,17 +11,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
-
-// Иконка базы
-const createBaseIcon = () => {
-  return L.icon({
-    iconUrl: 'https://cdn-icons-png.flaticon.com/512/619/619032.png',
-    iconSize: [30, 30],
-    iconAnchor: [15, 30],
-    popupAnchor: [0, -30],
-    className: 'base-icon'
-  });
-};
 
 // CSS стили для иконок
 const droneIconStyles = `
@@ -51,33 +40,24 @@ function AddMarkerOnClick({ addPoint }) {
   return null;
 }
 
-// Компонент для отображения базы
-function BaseMarker({ position, name }) {
-  return (
-    <Marker position={position} icon={createBaseIcon()}>
-      <Popup>
-        <div className="text-black">
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-            <strong>База {name}</strong>
-          </div>
-          <p className="text-sm text-gray-600 mt-1">Стартовая точка</p>
-          <p className="text-xs text-gray-500 mt-1">
-            Координаты: {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
-          </p>
-        </div>
-      </Popup>
-    </Marker>
-  );
+// Компонент для обновления центра карты
+function MapCenterUpdater({ center }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (center && Array.isArray(center) && center.length === 2) {
+      map.setView(center, map.getZoom());
+    }
+  }, [center, map]);
+  
+  return null;
 }
-
-// Импортируем Marker и Popup из react-leaflet
-import { Marker, Popup } from 'react-leaflet';
 
 export function DroneMap({ 
   drones, 
   mapCenter, 
-  addRoutePoint
+  addRoutePoint,
+  onDronePositionChange 
 }) {
   // Добавляем стили для иконок
   useEffect(() => {
@@ -97,7 +77,11 @@ export function DroneMap({
         zoom={13}
         scrollWheelZoom={true}
         className="w-full h-full"
+        style={{ zIndex: 1, position: 'relative' }}
       >
+        {/* Компонент для обновления центра карты */}
+        <MapCenterUpdater center={mapCenter} />
+        
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -124,14 +108,13 @@ export function DroneMap({
           <DroneMarker
             key={drone.id}
             drone={drone}
+            onPositionChange={onDronePositionChange}
           />
         ))}
-        
-        
       </MapContainer>
       
       {/* Инструкция */}
-      <div className="absolute bottom-4 left-4 z-[500] bg-gray-800 bg-opacity-90 text-white p-3 rounded-lg border border-gray-700 text-xs">
+      <div className="absolute bottom-4 left-4 z-[1000] bg-gray-800 bg-opacity-90 text-white p-3 rounded-lg border border-gray-700 text-xs">
         <p className="font-bold mb-1">Инструкция:</p>
         <div className="space-y-1">
           <div className="flex items-center">

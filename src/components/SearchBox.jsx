@@ -57,7 +57,15 @@ export function SearchBox({ setMapCenter }) {
   const handleSelect = (place) => {
     setQuery(place.display_name);
     setResults([]);
-    setMapCenter([parseFloat(place.lat), parseFloat(place.lon)]);
+    
+    const lat = parseFloat(place.lat);
+    const lon = parseFloat(place.lon);
+    
+    if (!isNaN(lat) && !isNaN(lon)) {
+      setMapCenter([lat, lon]);
+      console.log('Новый центр карты:', [lat, lon]);
+    }
+    
     clearTimer();
   };
 
@@ -86,7 +94,7 @@ export function SearchBox({ setMapCenter }) {
       </div>
       
       {results.length > 0 && (
-        <ul className="absolute top-full left-0 w-full bg-white text-black border border-gray-300 rounded mt-1 max-h-48 overflow-y-auto z-10 shadow-lg">
+        <ul className="absolute top-full left-0 w-full bg-white text-black border border-gray-300 rounded mt-1 max-h-48 overflow-y-auto z-50 shadow-lg">
           {results.map((place, idx) => (
             <li
               key={place.place_id || idx}
@@ -103,7 +111,7 @@ export function SearchBox({ setMapCenter }) {
       )}
 
       {query && results.length === 0 && !isLoading && (
-        <div className="absolute top-full left-0 w-full bg-white text-gray-500 border border-gray-300 rounded mt-1 p-2 z-10">
+        <div className="absolute top-full left-0 w-full bg-white text-gray-500 border border-gray-300 rounded mt-1 p-2 z-50">
           Ничего не найдено
         </div>
       )}

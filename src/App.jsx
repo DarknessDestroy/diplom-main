@@ -8,15 +8,6 @@ import { WelcomeScreen } from './components/WelcomeScreen';
 import { dronesData, initialMapCenter } from './constants';
 import 'leaflet/dist/leaflet.css';
 
-// Фикс для иконок Leaflet
-import L from 'leaflet';
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-});
-
 function App() {
   const [showMap, setShowMap] = useState(false);
   const [drones, setDrones] = useState(() => 
@@ -43,7 +34,7 @@ function App() {
     // Строим маршрут для первого дрона
     setDrones(prev =>
       prev.map((d, index) => 
-        index === 0 ? { ...d, path: [...d.path, latlng] } : d
+        index === 0 ? { ...d, path: [...d.path, [latlng.lat, latlng.lng]] } : d
       )
     );
   };
@@ -114,16 +105,19 @@ function App() {
           )}
         </main>
 
-        {showMap && <Sidebar dronesData={drones} />}
+        {showMap && (
+          <div className="relative z-[1000]">
+            <Sidebar dronesData={drones} />
+          </div>
+        )}
       </div>
 
-      <footer className="mt-3 bg-blue-800 p-3 rounded text-center text-white">
-        <div className=" md:flex-row justify-between items-center">
+      <footer className="mt-2 bg-blue-800 p-3 rounded text-center text-white">
+        <div className="md:flex-row justify-between items-center">
           <div>
             © 2025 Система управления дронами.
           </div>
           <div className="flex items-center space-x-4 mt-2 md:mt-0">
-            
           </div>
         </div>
       </footer>
