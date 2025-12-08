@@ -5,7 +5,7 @@ import { DroneMap } from './components/Map';
 import { Sidebar } from './components/Sidebar';
 import { WelcomeScreen } from './components/Welcome_Screen';
 import { LocationButton } from './components/Location_Button';
-import { dronesData, initialMapCenter } from './constants';
+import { dronesData, initialMapCenter } from './constants/drones_data';
 import 'leaflet/dist/leaflet.css';
 
 function App() {
