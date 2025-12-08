@@ -21,7 +21,7 @@ function App() {
 
   const [mapCenter, setMapCenter] = useState(initialMapCenter);
   const [selectedDrone, setSelectedDrone] = useState(null);
-  const [showDroneControls, setShowDroneControls] = useState(true);
+  const [showDroneControls, setShowDroneControls] = useState(false);
 
   const toggleDroneControls = () => setShowDroneControls(prev => !prev);
 
