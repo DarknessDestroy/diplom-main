@@ -77,7 +77,7 @@ export function YandexMap({
       center: mapCenter || [55.751244, 37.618423],
       zoom: mapZoom,
       // Отключаем кнопку разворота карты на весь экран
-      controls: ['zoomControl'],
+      controls: [],
     });
 
     mapInstanceRef.current = map;
@@ -437,7 +437,34 @@ export function YandexMap({
     return () => clearTimeout(timeoutId);
   }, [forceResize, mapLoaded]);
 
-  // 7️⃣ Очистка при размонтировании
+
+  useEffect(() => {
+    if (!mapLoaded || !mapInstanceRef.current) return;
+
+    const removeYandexElements = () => {
+      const selectorsToRemove = [
+        '.ymaps-2-1-79-gotoymaps__container',
+        '.ymaps-2-1-79-gotoymaps__text-container',
+        '.ymaps-2-1-79-gototech',
+        '.ymaps-2-1-79-copyright__content',
+        '.ymaps-2-1-79-copyright__agreement',
+        '.ymaps-2-1-79-copyright__logo-cell'
+      ];
+
+      selectorsToRemove.forEach(selector => {
+        document.querySelectorAll(selector).forEach(element => {
+          element.remove();
+        });
+      });
+    };
+
+    // Вызываем удаление после небольшой задержки, чтобы элементы успели появиться
+    const timeoutId = setTimeout(removeYandexElements, 500); 
+
+    return () => clearTimeout(timeoutId);
+  }, [mapLoaded]);
+
+  // 8️⃣ Очистка при размонтировании
   useEffect(() => {
     return () => {
       if (mapInstanceRef.current) {

@@ -686,9 +686,6 @@ function App() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-800 text-white px-3 py-3">
-      <header className="mb-2 flex justify-center bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded">
-        <h1 className="text-xl font-bold">Система управления дронами</h1>
-      </header>
 
       <div className="flex flex-1 gap-3 min-h-0">
         {/* Левая панель - Стоянка для дронов */}
