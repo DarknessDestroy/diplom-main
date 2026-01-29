@@ -56,7 +56,7 @@ function UserLocationMarker({ position }) {
     >
       <Popup>
         <div className="text-black">
-          <div className="font-bold mb-1">Ваше местоположение</div>
+          <div className="font-bold mb-1">Местоположение</div>
           <div className="text-sm">
             <div>Широта: {position[0].toFixed(6)}°</div>
             <div>Долгота: {position[1].toFixed(6)}°</div>

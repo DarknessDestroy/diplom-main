@@ -1,44 +1,32 @@
-import { useEffect } from 'react';
+import { useState } from 'react';
 
 export function DroneModal({ drone, onClose }) {
-  useEffect(() => {
-    const handleEsc = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
+  const [showMissionDetails, setShowMissionDetails] = useState(false);
 
-  if (!drone) return null;
-
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'в полете': return 'text-green-400';
-      case 'на земле': return 'text-gray-400';
-      case 'возвращается': return 'text-orange-400';
-      case 'пауза': return 'text-yellow-400';
-      default: return 'text-gray-400';
-    }
+  const calculateRouteLength = () => {
+    if (!drone.path || drone.path.length < 2) return 0;
+    let total = 0;
+    // Простая симуляция расчета длины (можно заменить на точный алгоритм)
+    return (drone.path.length * 0.5).toFixed(2); // ~0.5 км на точку
   };
 
-  const getBatteryColor = (battery) => {
-    if (battery > 70) return 'text-green-400';
-    if (battery > 30) return 'text-yellow-400';
-    return 'text-red-400';
+  const getMissionReadiness = () => {
+    if (!drone.isVisible) return { status: 'hidden', text: 'Дрон не на карте', color: 'text-red-400' };
+    if (drone.status === 'в полете') return { status: 'flying', text: 'На миссии', color: 'text-green-400' };
+    if (drone.status === 'заряжается') return { status: 'charging', text: 'Заряжается', color: 'text-yellow-400' };
+    if (drone.battery <= 20) return { status: 'low_battery', text: 'Низкий заряд', color: 'text-red-400' };
+    if (drone.path.length === 0) return { status: 'no_route', text: 'Нет маршрута', color: 'text-orange-400' };
+    return { status: 'ready', text: 'Готов к миссии', color: 'text-green-400' };
   };
 
-  const getBatteryWidth = (battery) => {
-    return `${Math.max(battery, 5)}%`;
-  };
+  const missionReadiness = getMissionReadiness();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div 
-        className="bg-gray-800 rounded-lg w-full max-w-md border border-gray-700"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+      <div className="bg-gray-800 rounded-lg w-full max-w-2xl border border-gray-700">
+        {/* Заголовок */}
         <div className="flex justify-between items-center p-4 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-white">Детальная информация</h2>
+          <h2 className="text-xl font-bold text-white">Детальная информация о дроне</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white text-2xl"
@@ -48,105 +36,139 @@ export function DroneModal({ drone, onClose }) {
         </div>
 
         <div className="p-4">
-          <div className="flex items-center mb-6">
-            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mr-3">
-              <span className="text-white font-bold text-lg">D</span>
-            </div>
+          {/* Основная информация */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
-              <h3 className="text-xl font-bold text-white">{drone.name}</h3>
-              <span className={`text-sm font-semibold ${getStatusColor(drone.status)}`}>
-                {drone.status}
-              </span>
+              <h3 className="text-lg font-bold text-white mb-2">{drone.name}</h3>
+              <p className="text-gray-400 mb-1">Модель: {drone.model}</p>
+              <p className="text-gray-400 mb-1">ID: {drone.id}</p>
+              <p className="text-gray-400">Серийный номер: {drone.serial || 'N/A'}</p>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-gray-900 p-3 rounded">
-              <div className="text-gray-400 text-sm mb-1">Батарея</div>
-              <div className="flex items-center">
-                <div className="flex-1 bg-gray-700 rounded-full h-2 mr-2">
-                  <div 
-                    className={`h-full rounded-full ${
-                      drone.battery > 70 ? 'bg-green-500' : 
-                      drone.battery > 30 ? 'bg-yellow-500' : 'bg-red-500'
-                    }`}
-                    style={{ width: getBatteryWidth(drone.battery) }}
-                  />
-                </div>
-                <span className={`font-bold ${getBatteryColor(drone.battery)}`}>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Статус:</span>
+                <span className={`font-medium ${missionReadiness.color}`}>
+                  {drone.status}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Заряд батареи:</span>
+                <span className={`font-bold ${
+                  drone.battery > 50 ? 'text-green-400' :
+                  drone.battery > 20 ? 'text-yellow-400' : 'text-red-400'
+                }`}>
                   {drone.battery}%
                 </span>
               </div>
-            </div>
-
-            <div className="bg-gray-900 p-3 rounded">
-              <div className="text-gray-400 text-sm mb-1">Скорость</div>
-              <div className={`font-bold text-lg ${drone.speed === 0 ? 'text-gray-400' : 'text-white'}`}>
-                {drone.speed} м/с
+              <div className="flex justify-between">
+                <span className="text-gray-400">На карте:</span>
+                <span className={drone.isVisible ? 'text-green-400' : 'text-red-400'}>
+                  {drone.isVisible ? 'Да' : 'Нет'}
+                </span>
               </div>
-              {drone.speed === 0 && drone.status === 'на земле' && (
-                <div className="text-gray-500 text-xs mt-1">Дрон на земле</div>
-              )}
-            </div>
-
-            <div className="bg-gray-900 p-3 rounded">
-              <div className="text-gray-400 text-sm mb-1">Высота</div>
-              <div className={`font-bold text-lg ${drone.altitude === 0 ? 'text-gray-400' : 'text-white'}`}>
-                {drone.altitude} м
-              </div>
-              {drone.altitude === 0 && drone.status === 'на земле' && (
-                <div className="text-gray-500 text-xs mt-1">Дрон на земле</div>
-              )}
-            </div>
-
-            <div className="bg-gray-900 p-3 rounded">
-              <div className="text-gray-400 text-sm mb-1">ID</div>
-              <div className="text-white font-bold text-lg">{drone.id}</div>
             </div>
           </div>
 
-          <div className="bg-gray-900 p-3 rounded mb-4">
-            <h4 className="text-gray-400 text-sm mb-2">Координаты</h4>
-            <div className="text-white">
-              {drone.position ? (
-                <>
-                  <div>Широта: {drone.position.lat.toFixed(6)}°</div>
-                  <div>Долгота: {drone.position.lng.toFixed(6)}°</div>
-                </>
-              ) : (
-                <div className="text-gray-400">Не доступны</div>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-gray-900 p-3 rounded">
+          {/* Информация о миссии */}
+          <div className="mb-6 p-3 bg-gray-900 rounded">
             <div className="flex justify-between items-center mb-2">
-              <h4 className="text-gray-400 text-sm">Маршрут</h4>
-              <span className="text-blue-400 text-sm">
-                {drone.path ? drone.path.length : 0} точек
+              <h4 className="font-bold text-white">Готовность к миссии</h4>
+              <span className={`px-3 py-1 rounded-full text-sm ${missionReadiness.color} bg-opacity-20 ${missionReadiness.color.replace('text-', 'bg-')}`}>
+                {missionReadiness.text}
               </span>
             </div>
-            {drone.path && drone.path.length > 0 ? (
-              <div className="text-white text-sm">
-                <div>Начало: точка 1</div>
-                <div>Конец: точка {drone.path.length}</div>
-                <div className="text-gray-400 mt-1">
-                  Расстояние: {drone.path.length * 100} м (примерно)
+            
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="text-gray-400">Требования:</div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className={drone.isVisible ? 'text-green-400' : 'text-red-400'}>
+                    {drone.isVisible ? '✓' : '✗'}
+                  </span>
+                  <span>Дрон на карте</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={drone.status !== 'в полете' ? 'text-green-400' : 'text-red-400'}>
+                    {drone.status !== 'в полете' ? '✓' : '✗'}
+                  </span>
+                  <span>Не в полете</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={drone.battery > 20 ? 'text-green-400' : 'text-red-400'}>
+                    {drone.battery > 20 ? '✓' : '✗'}
+                  </span>
+                  <span>Заряд {'>'} 20%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={drone.path.length > 0 ? 'text-green-400' : 'text-yellow-400'}>
+                    {drone.path.length > 0 ? '✓' : '⚠'}
+                  </span>
+                  <span>Маршрут задан ({drone.path.length} точек)</span>
                 </div>
               </div>
-            ) : (
-              <div className="text-gray-400 text-sm">Маршрут не задан</div>
-            )}
+            </div>
           </div>
-        </div>
 
-        <div className="p-4 border-t border-gray-700">
-          <button
-            onClick={onClose}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded font-medium transition"
-          >
-            Закрыть
-          </button>
+          {/* Статистика маршрута */}
+          <div className="mb-6">
+            <h4 className="font-bold text-white mb-3">Статистика маршрута</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-gray-900 p-3 rounded text-center">
+                <div className="text-2xl font-bold text-blue-400">{drone.path?.length || 0}</div>
+                <div className="text-xs text-gray-400">Точек маршрута</div>
+              </div>
+              <div className="bg-gray-900 p-3 rounded text-center">
+                <div className="text-2xl font-bold text-green-400">{calculateRouteLength()}</div>
+                <div className="text-xs text-gray-400">Примерная длина (км)</div>
+              </div>
+              <div className="bg-gray-900 p-3 rounded text-center">
+                <div className="text-2xl font-bold text-yellow-400">{drone.speed || 0}</div>
+                <div className="text-xs text-gray-400">Скорость (м/с)</div>
+              </div>
+              <div className="bg-gray-900 p-3 rounded text-center">
+                <div className="text-2xl font-bold text-purple-400">{drone.altitude || 0}</div>
+                <div className="text-xs text-gray-400">Высота (м)</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Кнопки действий */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
+            <button
+              onClick={() => setShowMissionDetails(!showMissionDetails)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white"
+            >
+              {showMissionDetails ? 'Скрыть детали' : 'Детали миссии'}
+            </button>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-white"
+            >
+              Закрыть
+            </button>
+          </div>
+
+          {/* Дополнительные детали миссии */}
+          {showMissionDetails && (
+            <div className="mt-4 p-3 bg-gray-900 rounded">
+              <h5 className="font-bold text-white mb-2">Подробности миссии</h5>
+              <div className="space-y-2 text-sm">
+                <p className="text-gray-400">
+                  <span className="text-white">Расчетное время полета:</span>{' '}
+                  {drone.path.length > 0 ? `${(drone.path.length * 2).toFixed(0)} мин` : 'Не рассчитано'}
+                </p>
+                <p className="text-gray-400">
+                  <span className="text-white">Расход батареи:</span>{' '}
+                  {drone.path.length > 0 ? `${(drone.path.length * 0.5).toFixed(1)}%` : 'Не рассчитан'}
+                </p>
+                <p className="text-gray-400">
+                  <span className="text-white">Текущая миссия:</span>{' '}
+                  {drone.missionId ? `ID: ${drone.missionId}` : 'Нет активной миссии'}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

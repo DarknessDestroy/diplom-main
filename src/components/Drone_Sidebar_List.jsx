@@ -1,80 +1,203 @@
-export function DroneCard({ drone, onClick }) {
+import { useState } from 'react';
+
+export function DroneCard({ drone, onClick, isSelectedForRoute = false }) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const canBeAssignedToMission = 
+    drone.isVisible && 
+    drone.status !== 'в полете' && 
+    drone.status !== 'заряжается' &&
+    drone.battery > 20;
+
   const getStatusColor = (status) => {
     switch(status) {
-      case 'в полете': return 'bg-green-500';
-      case 'на земле': return 'bg-gray-500';
-      case 'возвращается': return 'bg-orange-500';
-      case 'пауза': return 'bg-yellow-500';
-      default: return 'bg-gray-500';
+      case 'в полете':
+        return 'text-green-400';
+      case 'заряжается':
+        return 'text-yellow-400';
+      case 'на земле':
+        return 'text-blue-400';
+      case 'возвращается':
+        return 'text-orange-400';
+      case 'неактивен':
+        return 'text-gray-400';
+      default:
+        return 'text-gray-400';
     }
   };
 
-  const getBatteryColor = (battery) => {
-    if (battery > 70) return 'text-green-400';
-    if (battery > 30) return 'text-yellow-400';
-    return 'text-red-400';
+  const getStatusIcon = (status) => {
+    switch(status) {
+      case 'в полете':
+        return '🚁';
+      case 'заряжается':
+        return '🔋';
+      case 'на земле':
+        return '🛬';
+      case 'возвращается':
+        return '↩️';
+      case 'неактивен':
+        return '⏸️';
+      default:
+        return '📡';
+    }
   };
 
-  const getBatteryWidth = (battery) => {
-    return `${Math.max(battery, 5)}%`;
+  const getBatteryIcon = (battery) => {
+    if (battery > 70) return '🟢';
+    if (battery > 40) return '🟡';
+    if (battery > 20) return '🟠';
+    return '🔴';
   };
 
   return (
     <div 
-      className="bg-gray-800 p-3 rounded-lg border border-gray-700 hover:border-blue-500 cursor-pointer transition-all duration-200 hover:bg-gray-750"
+      className={`cursor-pointer transition-all duration-200 ${
+        isSelectedForRoute 
+          ? 'ring-2 ring-blue-500 ring-opacity-80 bg-blue-900/20' 
+          : 'hover:bg-gray-800'
+      } ${drone.missionId ? 'border-l-4 border-green-500' : ''}`}
       onClick={() => onClick(drone)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center">
-          <div className={`w-3 h-3 rounded-full mr-2 ${getStatusColor(drone.status)}`}></div>
-          <h3 className="font-bold text-white">{drone.name}</h3>
+      <div className="flex justify-between items-start p-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className={`font-bold ${
+              isSelectedForRoute ? 'text-blue-300' : 'text-white'
+            }`}>
+              {drone.name}
+            </h3>
+            
+            {drone.missionId && (
+              <span className="text-xs bg-green-900 text-green-300 px-2 py-1 rounded-full flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                Миссия
+              </span>
+            )}
+            
+            {isSelectedForRoute && (
+              <span className="text-xs bg-blue-900 text-blue-300 px-2 py-1 rounded-full flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></span>
+                Маршрут
+              </span>
+            )}
+          </div>
+          
+          <p className="text-sm text-gray-400 mb-2">
+            {drone.model}
+          </p>
+          
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-1">
+              <span className="text-gray-500">{getStatusIcon(drone.status)}</span>
+              <span className={getStatusColor(drone.status)}>
+                {drone.status}
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <span className={getBatteryIcon(drone.battery)}></span>
+              <span className={`font-medium ${
+                drone.battery > 50 ? 'text-green-400' :
+                drone.battery > 20 ? 'text-yellow-400' : 'text-red-400'
+              }`}>
+                {drone.battery}%
+              </span>
+            </div>
+            
+            {drone.speed > 0 && (
+              <div className="flex items-center gap-1">
+                <span className="text-gray-500">⚡</span>
+                <span className="text-gray-300">{drone.speed.toFixed(1)} м/с</span>
+              </div>
+            )}
+            
+            {drone.altitude > 0 && (
+              <div className="flex items-center gap-1">
+                <span className="text-gray-500">📏</span>
+                <span className="text-gray-300">{drone.altitude.toFixed(0)} м</span>
+              </div>
+            )}
+          </div>
+          
+          {!canBeAssignedToMission && drone.isVisible && (
+            <div className="mt-2 text-xs flex items-center gap-2">
+              <span className="text-red-400 font-medium">⚠️ Ограничения:</span>
+              {drone.status === 'в полете' && (
+                <span className="text-red-300">На миссии</span>
+              )}
+              {drone.status === 'заряжается' && (
+                <span className="text-yellow-300">Заряжается</span>
+              )}
+              {drone.battery <= 20 && (
+                <span className="text-red-300">Низкий заряд</span>
+              )}
+            </div>
+          )}
         </div>
-        <span className="text-xs text-gray-400">ID: {drone.id}</span>
-      </div>
-
-      <div className="mb-3">
-        <div className="flex justify-between text-sm mb-1">
-          <span className="text-gray-400">Батарея</span>
-          <span className={`font-medium ${getBatteryColor(drone.battery)}`}>
-            {drone.battery}%
-          </span>
-        </div>
-        <div className="w-full bg-gray-700 rounded-full h-2">
-          <div 
-            className={`h-full rounded-full ${
-              drone.battery > 70 ? 'bg-green-500' : 
-              drone.battery > 30 ? 'bg-yellow-500' : 'bg-red-500'
-            }`}
-            style={{ width: getBatteryWidth(drone.battery) }}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        <div className="bg-gray-900 p-2 rounded">
-          <div className="text-gray-400">Скорость</div>
-          <div className={`font-medium ${drone.speed === 0 ? 'text-gray-400' : 'text-white'}`}>
-            {drone.speed} м/с
+        
+        <div className="flex flex-col items-end gap-1">
+          {/* Индикатор видимости на карте */}
+          <div className={`text-xs px-2 py-1 rounded ${
+            drone.isVisible 
+              ? 'bg-green-900/50 text-green-300' 
+              : 'bg-gray-700 text-gray-400'
+          }`}>
+            {drone.isVisible ? 'На карте' : 'Скрыт'}
           </div>
         </div>
-        <div className="bg-gray-900 p-2 rounded">
-          <div className="text-gray-400">Высота</div>
-          <div className={`font-medium ${drone.altitude === 0 ? 'text-gray-400' : 'text-white'}`}>
-            {drone.altitude} м
+      </div>
+      
+      {/* Прогресс маршрута (если есть точки) */}
+      {drone.path && drone.path.length > 0 && (
+        <div className="px-3 pb-2">
+          <div className="flex justify-between text-xs text-gray-400 mb-1">
+            <span>Маршрут: {drone.path.length} точек</span>
+            <span className={`${
+              isSelectedForRoute ? 'text-blue-400' : 'text-gray-500'
+            }`}>
+              {drone.path.length > 0 ? 'Готов к миссии' : 'Нет маршрута'}
+            </span>
+          </div>
+          <div className="w-full bg-gray-700 rounded-full h-1.5">
+            <div 
+              className={`h-1.5 rounded-full ${
+                isSelectedForRoute ? 'bg-blue-500' : 'bg-green-500'
+              }`}
+              style={{ 
+                width: `${Math.min(100, (drone.path.length / 20) * 100)}%` 
+              }}
+            ></div>
           </div>
         </div>
-      </div>
+      )}
+      
+      {/* Индикатор выбора для миссии */}
+      {isSelectedForRoute && (
+        <div className="px-3 pb-2">
+          <div className="text-xs text-blue-300 flex items-center justify-center gap-2 p-2 bg-blue-900/30 rounded">
+            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+            Выбран для построения маршрута и миссий
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
-      <div className="mt-3 flex justify-between items-center">
-        <span className={`text-xs font-medium px-2 py-1 rounded-full ${getStatusColor(drone.status)}`}>
-          {drone.status}
-        </span>
-        {drone.status === 'на земле' && (
-          <span className="text-xs text-gray-400">
-            Скорость: {drone.speed} м/с, Высота: {drone.altitude} м
-          </span>
-        )}
-      </div>
+export function DroneSidebarList({ drones, selectedDroneId, onDroneClick }) {
+  return (
+    <div className="space-y-2">
+      {drones.map(drone => (
+        <DroneCard
+          key={drone.id}
+          drone={drone}
+          onClick={onDroneClick}
+          isSelectedForRoute={drone.id === selectedDroneId}
+        />
+      ))}
     </div>
   );
 }
