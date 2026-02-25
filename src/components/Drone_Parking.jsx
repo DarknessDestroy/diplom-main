@@ -2,8 +2,6 @@ import React from 'react';
 
 export const DroneParking = ({ 
   drones = [], 
-  showParking = true, 
-  onToggleParking,
   onPlaceDrone,
   onRemoveDrone,
   onBackToTemplates
@@ -70,26 +68,14 @@ export const DroneParking = ({
   };
 
   return (
-    <div className="flex">
-      {/* Основная панель стоянки */}
-      <div className={`transition-all duration-300 ease-in-out ${showParking ? 'w-72 opacity-100' : 'w-0 opacity-0 overflow-hidden pointer-events-none'}`}>
-        {showParking && (
-          <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden h-full flex flex-col">
-            {/* Заголовок */}
-            <div className="bg-gradient-to-r from-gray-700 to-gray-800 p-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-white">Стоянка для дронов</h2>
-                <button
-                  onClick={onToggleParking}
-                  className="text-gray-400 hover:text-white transition-colors p-1 rounded-full hover:bg-gray-700"
-                  title="Скрыть стоянку"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-              </div>
-              <div className="flex items-center gap-2 mt-2">
+    <div className="flex flex-shrink-0 w-72">
+      <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden h-full flex flex-col w-full">
+        {/* Заголовок */}
+        <div className="bg-gradient-to-r from-gray-700 to-gray-800 p-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold text-white">Стоянка для дронов</h2>
+          </div>
+          <div className="flex items-center gap-2 mt-2">
                 <div className="bg-green-500 rounded-full w-2 h-2"></div>
                 <span className="text-sm text-gray-300">
                   Размещено: {placedDrones.length} из {drones.length}
@@ -208,29 +194,7 @@ export const DroneParking = ({
                 </button>
               </div>
             )}
-          </div>
-        )}
-      </div>
-
-      {/* Кнопка показа/скрытия */}
-      {!showParking && (
-        <div className="flex-shrink-0">
-          <div className="ml-2 bg-gray-800 rounded-lg h-full flex flex-col items-center p-2">
-          <button
-            onClick={onToggleParking}
-            className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-700 rounded-lg"
-            title="Показать стоянку"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-            </svg>
-          </button>
-            <div className="mt-4 text-xs text-gray-500 writing-mode-vertical-rl transform rotate-180 origin-center">
-              <span className="inline-block transform rotate-180">Стоянка дронов</span>
-            </div>
-          </div>
         </div>
-      )}
-    </div>
+      </div>
   );
 };

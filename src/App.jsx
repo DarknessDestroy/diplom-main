@@ -178,7 +178,6 @@ function App() {
 
   const [mapCenter, setMapCenter] = useState(initialMapCenter);
   const [selectedDroneForModal, setSelectedDroneForModal] = useState(null);
-  const [showDroneParking, setShowDroneParking] = useState(true);
   const [mapZoom, setMapZoom] = useState(13);
   const [globalMissionLog, setGlobalMissionLog] = useState([]);
   const activeTimersRef = useRef(new Map());
@@ -203,7 +202,6 @@ function App() {
     applyTemplateToDrone(selectedDroneForSidebar, templateToApplyId);
   }, [templateToApplyId, selectedDroneForSidebar, drones, applyTemplateToDrone]);
 
-  const toggleDroneParking = () => setShowDroneParking(prev => !prev);
 
   // Начать размещение дрона (выбрать дрон для размещения)
   const startDronePlacement = (droneId) => {
@@ -842,8 +840,6 @@ function App() {
           >
             <DroneParking
               drones={drones}
-              showParking={showDroneParking}
-              onToggleParking={toggleDroneParking}
               onPlaceDrone={startDronePlacement}
               onRemoveDrone={removeDroneFromMap}
               onBackToTemplates={() => {
@@ -991,7 +987,7 @@ function App() {
                   mapZoom={mapZoom}
                   onMapClick={handleMapClick}
                   selectedDroneId={selectedDroneForSidebar}
-                  forceResize={showDroneParking}
+                  forceResize={true}
                   previewPath={templateToApplyId ? (missionTemplates.find(t => t.id === templateToApplyId)?.path) ?? null : null}
                 />
               </div>
