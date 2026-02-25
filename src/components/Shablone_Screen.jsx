@@ -27,15 +27,15 @@ export function ShabloneScreen({
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      <div className="bg-gray-800 rounded-xl border border-gray-700 shadow-xl overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-700">
+      <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-700 bg-gradient-to-r from-gray-700 to-gray-800">
           <h2 className="text-2xl font-bold text-white">Шаблоны маршрутов патрулирования</h2>
           <p className="text-gray-400 text-sm mt-1">
             Создайте маршрут по карте, сохраните его как шаблон и используйте для дронов.
           </p>
         </div>
 
-        <div className="px-6 py-4 flex flex-wrap gap-3 justify-between items-center bg-gray-800/50">
+        <div className="px-6 py-4 flex flex-wrap gap-3 justify-between items-center">
           <div className="flex gap-2">
             <button
               type="button"

@@ -344,14 +344,6 @@ export const Sidebar = ({
                 </div>
               </div>
             )}
-
-            {!selectedDrone && dronesData.length > 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <div className="text-4xl mb-2">🛸</div>
-                <p>Выберите дрон для управления</p>
-                <p className="text-sm mt-1">Нажмите на любой дрон из списка выше</p>
-              </div>
-            )}
           </div>
         )}
 
