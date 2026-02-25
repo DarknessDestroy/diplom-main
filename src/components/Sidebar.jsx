@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { flightStatus } from '../constants/drones_data';
+import { calculateDistance, calculateOptimalSpeed, calculateFlightTime } from '../utils/flightCalculator';
 
 export const Sidebar = ({
   dronesData = [],
@@ -18,7 +19,11 @@ export const Sidebar = ({
   onClearLogs,
   onDroneClick,
   isRouteEditMode = false,
-  onToggleRouteMode
+  onToggleRouteMode,
+  missionTemplates = [],
+  templateToApplyId = null,
+  onApplyTemplate,
+  onClearTemplateToApply
 }) => {
   const [activeTab, setActiveTab] = useState('control');
 
@@ -49,6 +54,28 @@ export const Sidebar = ({
       default: return 'border-gray-500 bg-gray-900/20';
     }
   };
+
+  // Секунды → "минуты:секунды" (например 1:30)
+  const formatTimeSeconds = (seconds) => {
+    const sec = Math.floor(Number(seconds) || 0);
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
+
+  // Оценка времени полёта по маршруту (в секундах), чтобы не зависеть от устаревших missionParameters
+  const estimatedTimeSec = useMemo(() => {
+    if (!selectedDrone?.path || selectedDrone.path.length < 2) return null;
+    let totalDistance = 0;
+    for (let i = 0; i < selectedDrone.path.length - 1; i++) {
+      const [lat1, lng1] = selectedDrone.path[i];
+      const [lat2, lng2] = selectedDrone.path[i + 1];
+      totalDistance += calculateDistance(lat1, lng1, lat2, lng2);
+    }
+    const maxSpeed = selectedDrone.maxSpeed != null ? selectedDrone.maxSpeed : 70;
+    const speed = calculateOptimalSpeed(totalDistance, maxSpeed / 3.6);
+    return Math.round(calculateFlightTime(totalDistance, speed));
+  }, [selectedDrone?.path, selectedDrone?.maxSpeed]);
 
   // Статус текстом
   const getStatusText = (drone) => {
@@ -182,9 +209,9 @@ export const Sidebar = ({
                       </div>
                       <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
                         <div
-                          className={`h-full ${getProgressColor(drone.flightProgress)} transition-all duration-300`}
+                          className={`h-full ${getProgressColor(drone.flightProgress)} transition-all duration-300 ease-out`}
                           style={{ width: `${drone.flightProgress || 0}%` }}
-                        ></div>
+                        />
                       </div>
                     </div>
                   )}
@@ -216,10 +243,56 @@ export const Sidebar = ({
 
                     <div className="text-gray-400">Оцен. время:</div>
                     <div className="font-medium text-white">
-                      {selectedDrone.missionParameters?.estimatedTime || 0} с
+                      {formatTimeSeconds(estimatedTimeSec ?? selectedDrone.missionParameters?.estimatedTime)}
+                      <span className="text-gray-500 text-xs font-normal ml-1">(мин:сек)</span>
                     </div>
                   </div>
                 </div>
+
+                {/* Применить шаблон миссии */}
+                {(templateToApplyId || missionTemplates.length > 0) && !selectedDrone.isFlying && (
+                  <div className="mb-4 p-3 bg-gray-700/80 rounded-lg border border-gray-600">
+                    <h4 className="font-semibold text-white mb-2">Шаблон маршрута</h4>
+                    {templateToApplyId && (() => {
+                      const tpl = missionTemplates.find(t => t.id === templateToApplyId);
+                      return tpl ? (
+                        <div className="flex flex-col gap-2">
+                          <p className="text-gray-300 text-sm">Выбран: <strong className="text-white">{tpl.name}</strong></p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => onApplyTemplate(selectedDrone.id, templateToApplyId)}
+                              className="flex-1 py-2 bg-green-600 hover:bg-green-700 rounded text-sm font-medium"
+                            >
+                              Применить к {selectedDrone.name}
+                            </button>
+                            <button
+                              onClick={onClearTemplateToApply}
+                              className="px-3 py-2 bg-gray-600 hover:bg-gray-500 rounded text-sm"
+                            >
+                              Отмена
+                            </button>
+                          </div>
+                        </div>
+                      ) : null;
+                    })()}
+                    {!templateToApplyId && missionTemplates.length > 0 && (
+                      <p className="text-gray-400 text-xs mb-2">Загрузить сохранённый маршрут:</p>
+                    )}
+                    {!templateToApplyId && (
+                      <div className="flex flex-wrap gap-1">
+                        {missionTemplates.map((tpl) => (
+                          <button
+                            key={tpl.id}
+                            onClick={() => onApplyTemplate(selectedDrone.id, tpl.id)}
+                            className="px-2 py-1.5 bg-blue-600 hover:bg-blue-700 rounded text-xs font-medium"
+                          >
+                            {tpl.name} ({tpl.path?.length || 0})
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Управление маршрутом */}
                 <div className="space-y-2">
@@ -326,12 +399,17 @@ export const Sidebar = ({
                         </button>
                       )}
                       {selectedDroneStatus === flightStatus.COMPLETED && (
-                        <button
-                          disabled
-                          className="col-span-2 bg-green-700 py-2 rounded cursor-not-allowed opacity-50 flex items-center justify-center gap-2"
-                        >
-                          ✅ Миссия завершена
-                        </button>
+                        <>
+                          <div className="col-span-2 text-center text-sm text-green-300">✅ Миссия завершена</div>
+                          {selectedDronePathLength >= 2 && (
+                            <button
+                              onClick={() => onStartFlight(selectedDrone.id)}
+                              className="col-span-2 bg-green-600 hover:bg-green-700 py-2 rounded flex items-center justify-center gap-2"
+                            >
+                              🔄 Перезапустить миссию
+                            </button>
+                          )}
+                        </>
                       )}
                       {selectedDroneStatus === flightStatus.IDLE && selectedDronePathLength < 2 && (
                         <div className="col-span-2 bg-yellow-900/50 border border-yellow-700 rounded p-2 text-center text-yellow-200 text-sm">

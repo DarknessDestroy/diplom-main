@@ -26,7 +26,12 @@ a:hover {
 
 body {
   margin: 0;
-  background-color: black;
+  background-color: #1f2937;
+}
+
+#root {
+  min-height: 100vh;
+  background-color: #1f2937;
 }
 
 h1 {

@@ -12,9 +12,10 @@ export const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 // Расчет времени полета на основе расстояния и скорости
+// distance — метры, speed — м/с, результат — секунды
 export const calculateFlightTime = (distance, speed) => {
   if (speed <= 0) return 0;
-  return (distance / speed) * 3600; // время в секундах
+  return distance / speed;
 };
 
 // Расчет промежуточной точки на маршруте

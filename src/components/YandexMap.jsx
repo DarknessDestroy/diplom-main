@@ -14,12 +14,18 @@ export function YandexMap({
   onDronePositionChange,
   placementMode = false,
   selectedDroneId = null,
-  forceResize = false
+  forceResize = false,
+  /** Маршрут в режиме редактирования (шаблон) — рисуется отдельной линией */
+  editingPath = null,
+  /** Маршрут для предпросмотра (например выбранный шаблон после «Использовать») */
+  previewPath = null
 }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const droneMarkersRef = useRef({}); // Храним маркеры дронов по id
   const routePolylinesRef = useRef({}); // Храним линии маршрутов
+  const editingPolylineRef = useRef(null);
+  const previewPolylineRef = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [error, setError] = useState(null);
   const lastMapCenterRef = useRef(mapCenter);
@@ -215,6 +221,60 @@ export function YandexMap({
     });
 
   }, [drones, selectedDroneId, mapLoaded]); // Убрал mapCenter и mapZoom из зависимостей
+
+  // Маршрут в режиме редактирования (шаблон миссии)
+  useEffect(() => {
+    if (!mapLoaded || !mapInstanceRef.current || !window.ymaps) return;
+    const map = mapInstanceRef.current;
+    const path = editingPath && editingPath.length > 0 ? editingPath : null;
+
+    if (editingPolylineRef.current) {
+      map.geoObjects.remove(editingPolylineRef.current);
+      editingPolylineRef.current = null;
+    }
+    if (path && path.length >= 2) {
+      const polyline = new window.ymaps.Polyline(
+        path.map(p => [p[0], p[1]]),
+        {},
+        { strokeColor: '#22c55e', strokeWidth: 4, strokeOpacity: 0.9 }
+      );
+      map.geoObjects.add(polyline);
+      editingPolylineRef.current = polyline;
+    }
+    return () => {
+      if (editingPolylineRef.current) {
+        try { map.geoObjects.remove(editingPolylineRef.current); } catch { }
+        editingPolylineRef.current = null;
+      }
+    };
+  }, [mapLoaded, editingPath]);
+
+  // Предпросмотр маршрута (выбранный шаблон на главном экране)
+  useEffect(() => {
+    if (!mapLoaded || !mapInstanceRef.current || !window.ymaps) return;
+    const map = mapInstanceRef.current;
+    const path = previewPath && previewPath.length >= 2 ? previewPath : null;
+
+    if (previewPolylineRef.current) {
+      map.geoObjects.remove(previewPolylineRef.current);
+      previewPolylineRef.current = null;
+    }
+    if (path) {
+      const polyline = new window.ymaps.Polyline(
+        path.map(p => [p[0], p[1]]),
+        {},
+        { strokeColor: '#22c55e', strokeWidth: 4, strokeOpacity: 0.8 }
+      );
+      map.geoObjects.add(polyline);
+      previewPolylineRef.current = polyline;
+    }
+    return () => {
+      if (previewPolylineRef.current) {
+        try { map.geoObjects.remove(previewPolylineRef.current); } catch { }
+        previewPolylineRef.current = null;
+      }
+    };
+  }, [mapLoaded, previewPath]);
 
   // В YandexMap.jsx добавьте анимацию для летящего дрона
   // В функции обновления маркеров дронов добавьте:
@@ -476,6 +536,14 @@ export function YandexMap({
           Object.values(routePolylinesRef.current).forEach(polyline => {
             try { mapInstanceRef.current.geoObjects.remove(polyline); } catch { }
           });
+          if (editingPolylineRef.current) {
+            try { mapInstanceRef.current.geoObjects.remove(editingPolylineRef.current); } catch { }
+            editingPolylineRef.current = null;
+          }
+          if (previewPolylineRef.current) {
+            try { mapInstanceRef.current.geoObjects.remove(previewPolylineRef.current); } catch { }
+            previewPolylineRef.current = null;
+          }
 
           mapInstanceRef.current.destroy();
         } catch { }
@@ -519,7 +587,7 @@ export function YandexMap({
         style={{
           height: '100%',
           width: '100%',
-          cursor: placementMode ? 'crosshair' : 'grab',
+          cursor: placementMode || (editingPath && editingPath.length >= 0) ? 'crosshair' : 'grab',
         }}
       />
     </div>

@@ -5,7 +5,8 @@ export const DroneParking = ({
   showParking = true, 
   onToggleParking,
   onPlaceDrone,
-  onRemoveDrone
+  onRemoveDrone,
+  onBackToTemplates
 }) => {
   const placedDrones = drones.filter(d => d.isVisible);
   const availableDrones = drones.filter(d => !d.isVisible);
@@ -128,14 +129,6 @@ export const DroneParking = ({
                           </button>
                         </div>
                         
-                        {drone.isFlying && (
-                          <div className="mt-2">
-                            <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                            
-                            </div>
-                          </div>
-                        )}
-                        
                         <div className="grid grid-cols-2 gap-1 text-xs mt-2">
                           <div className="text-gray-400">Скорость:</div>
                           <div className="font-medium text-white">
@@ -199,6 +192,22 @@ export const DroneParking = ({
                 </div>
               )}
             </div>
+
+            {/* Кнопка возврата к шаблонам — внизу панели, возле Footer */}
+            {onBackToTemplates && (
+              <div className="flex-shrink-0 p-4 pt-2 border-t border-gray-700">
+                <button
+                  type="button"
+                  onClick={onBackToTemplates}
+                  className="w-full py-2.5 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  Вернуться к шаблонам
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

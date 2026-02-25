@@ -6,6 +6,7 @@ import { YandexMap } from './components/YandexMap';
 import { DroneModal } from './components/Drone_OnClick_List_Sidebar';
 import { DroneParking } from './components/Drone_Parking';
 import { dronesData, initialMapCenter, flightStatus } from './constants/drones_data';
+import { MISSION_TEMPLATES_STORAGE_KEY } from './constants/mission';
 import {
   calculateDistance,
   calculateFlightTime,
@@ -14,7 +15,132 @@ import {
 } from './utils/flightCalculator';
 
 function App() {
-  const [hasStarted, setHasStarted] = useState(true);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [missionTemplates, setMissionTemplates] = useState(() => {
+    try {
+      const raw = localStorage.getItem(MISSION_TEMPLATES_STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map((t) => ({
+        id: t.id,
+        name: t.name || 'Без названия',
+        path: Array.isArray(t.path) ? t.path : []
+      }));
+    } catch {
+      return [];
+    }
+  });
+
+  // Режим рисования маршрута шаблона на карте (на Welcome Screen)
+  const [templateEditMode, setTemplateEditMode] = useState(null); // null | 'create' | { type: 'edit', id }
+  const [templateDraftPath, setTemplateDraftPath] = useState([]);
+  const [templateDraftName, setTemplateDraftName] = useState('');
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(MISSION_TEMPLATES_STORAGE_KEY, JSON.stringify(missionTemplates));
+    } catch (e) {
+      console.warn('Failed to save mission templates', e);
+    }
+  }, [missionTemplates]);
+
+  const addMissionTemplate = useCallback((template) => {
+    const id = `tpl_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    setMissionTemplates((prev) => [...prev, { id, name: template.name || 'Шаблон', path: template.path || [] }]);
+  }, []);
+  const updateMissionTemplate = useCallback((id, template) => {
+    setMissionTemplates((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, name: template.name ?? t.name, path: template.path ?? t.path } : t))
+    );
+  }, []);
+  const deleteMissionTemplate = useCallback((id) => {
+    setMissionTemplates((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const startCreateTemplate = useCallback(() => {
+    setTemplateEditMode('create');
+    setTemplateDraftPath([]);
+    setTemplateDraftName('');
+  }, []);
+  const startEditTemplateRoute = useCallback((id) => {
+    const t = missionTemplates.find((x) => x.id === id);
+    if (!t) return;
+    setTemplateEditMode({ type: 'edit', id });
+    setTemplateDraftPath([...(t.path || [])]);
+    setTemplateDraftName(t.name || '');
+  }, [missionTemplates]);
+  const cancelTemplateEdit = useCallback(() => {
+    setTemplateEditMode(null);
+    setTemplateDraftPath([]);
+    setTemplateDraftName('');
+  }, []);
+  const saveTemplateDraft = useCallback(() => {
+    const name = templateDraftName.trim() || 'Маршрут патрулирования';
+    if (templateEditMode === 'create') {
+      addMissionTemplate({ name, path: [...templateDraftPath] });
+    } else if (templateEditMode && templateEditMode.type === 'edit') {
+      updateMissionTemplate(templateEditMode.id, { name, path: [...templateDraftPath] });
+    }
+    cancelTemplateEdit();
+  }, [templateEditMode, templateDraftName, templateDraftPath, addMissionTemplate, updateMissionTemplate, cancelTemplateEdit]);
+  const addTemplateDraftPoint = useCallback((latlng) => {
+    setTemplateDraftPath((prev) => [...prev, [latlng.lat, latlng.lng]]);
+  }, []);
+  const undoTemplateDraftPoint = useCallback(() => {
+    setTemplateDraftPath((prev) => (prev.length ? prev.slice(0, -1) : []));
+  }, []);
+
+  // Шаблон, выбранный для применения к дрону после «Использовать» на Welcome
+  const [templateToApplyId, setTemplateToApplyId] = useState(null);
+  const computeMissionParamsFromPath = useCallback((path, maxSpeed = 70, battery = 100) => {
+    if (!path || path.length < 2) return null;
+    let totalDistance = 0;
+    const distances = [];
+    for (let i = 0; i < path.length - 1; i++) {
+      const [lat1, lng1] = path[i];
+      const [lat2, lng2] = path[i + 1];
+      const distance = calculateDistance(lat1, lng1, lat2, lng2);
+      totalDistance += distance;
+      distances.push(distance);
+    }
+    const optimalSpeed = calculateOptimalSpeed(totalDistance, maxSpeed / 3.6);
+    const flightTime = calculateFlightTime(totalDistance, optimalSpeed);
+    const batteryConsumption = Math.min(totalDistance / 100, battery - 10);
+    const missionParams = {
+      totalDistance: Math.round(totalDistance),
+      optimalSpeed: Math.round(optimalSpeed * 3.6),
+      estimatedTime: Math.round(flightTime),
+      batteryConsumption: Math.round(batteryConsumption),
+      waypoints: path.length,
+      distances,
+      segmentTimes: distances.map((d) => Math.max(1000, (d / optimalSpeed) * 1000)),
+      totalTime: 0
+    };
+    missionParams.totalTime = missionParams.segmentTimes.reduce((sum, t) => sum + t, 0);
+    return missionParams;
+  }, []);
+
+  const applyTemplateToDrone = useCallback((droneId, tplId) => {
+    const tpl = missionTemplates.find((t) => t.id === tplId);
+    if (!tpl || !tpl.path || !tpl.path.length) return;
+    setDrones((prev) => {
+      const path = tpl.path.map((p) => [p[0], p[1]]);
+      const next = prev.map((d) =>
+        d.id === droneId ? { ...d, path } : d
+      );
+      const drone = next.find((d) => d.id === droneId);
+      if (drone && path.length >= 2) {
+        const params = computeMissionParamsFromPath(path, drone.maxSpeed, drone.battery);
+        return next.map((d) =>
+          d.id === droneId ? { ...d, path, missionParameters: params } : d
+        );
+      }
+      return next;
+    });
+    setTemplateToApplyId(null);
+  }, [missionTemplates, computeMissionParamsFromPath]);
+
   const [drones, setDrones] = useState(() =>
     dronesData.map(drone => ({
       ...drone,
@@ -62,6 +188,14 @@ function App() {
 
   // Выбранный дрон для управления в сайдбаре
   const [selectedDroneForSidebar, setSelectedDroneForSidebar] = useState(null);
+
+  // Если выбран шаблон — при выборе дрона (размещённого на карте) сразу применяем шаблон к нему
+  useEffect(() => {
+    if (!templateToApplyId || selectedDroneForSidebar == null) return;
+    const drone = drones.find((d) => d.id === selectedDroneForSidebar);
+    if (!drone || !drone.isVisible) return;
+    applyTemplateToDrone(selectedDroneForSidebar, templateToApplyId);
+  }, [templateToApplyId, selectedDroneForSidebar, drones, applyTemplateToDrone]);
 
   const toggleDroneParking = () => setShowDroneParking(prev => !prev);
 
@@ -177,7 +311,11 @@ function App() {
 
   // Обработка клика по карте
   const handleMapClick = (latlng) => {
-    console.log('Карта кликнута:', latlng);
+    // Режим рисования маршрута шаблона (Welcome Screen)
+    if (templateEditMode) {
+      addTemplateDraftPoint(latlng);
+      return;
+    }
 
     // Если в режиме размещения дрона
     if (placementMode && droneToPlace) {
@@ -674,9 +812,9 @@ function App() {
     };
   }, []);
 
-  const handleStart = () => {
+  const handleStart = (templateId = null) => {
     setHasStarted(true);
-    console.log('Приложение запущено, карта отображается');
+    setTemplateToApplyId(templateId || null);
   };
 
   const handleDroneClick = (drone) => {
@@ -688,22 +826,90 @@ function App() {
     <div className="flex flex-col min-h-screen bg-gray-800 text-white px-3 py-3">
 
       <div className="flex flex-1 gap-3 min-h-0">
-        {/* Левая панель - Стоянка для дронов */}
-        <div className="flex-shrink-0">
-          <DroneParking
-            drones={drones}
-            showParking={showDroneParking}
-            onToggleParking={toggleDroneParking}
-            onPlaceDrone={startDronePlacement}
-            onRemoveDrone={removeDroneFromMap}
-          />
-        </div>
+        {/* Левая панель - Стоянка для дронов (скрыта на Welcome Screen) */}
+        {hasStarted && (
+          <div className="flex-shrink-0">
+            <DroneParking
+              drones={drones}
+              showParking={showDroneParking}
+              onToggleParking={toggleDroneParking}
+              onPlaceDrone={startDronePlacement}
+              onRemoveDrone={removeDroneFromMap}
+              onBackToTemplates={() => setHasStarted(false)}
+            />
+          </div>
+        )}
 
         {/* Основной контент */}
         <main className="flex-1 bg-gray-700 p-3 rounded flex flex-col min-w-0 min-h-0">
-          {!hasStarted ? (
+          {templateEditMode ? (
+            <div className="flex-1 flex flex-col min-h-0 relative">
+              <div className="flex-1 min-h-0">
+                <YandexMap
+                  drones={[]}
+                  mapCenter={mapCenter}
+                  mapZoom={mapZoom}
+                  onMapClick={handleMapClick}
+                  editingPath={templateDraftPath}
+                  forceResize={false}
+                />
+              </div>
+              <div className="absolute bottom-4 left-4 right-4 z-10 bg-gray-800/95 border border-gray-600 rounded-xl p-4 shadow-xl max-w-md">
+                <h3 className="font-semibold text-white mb-2">
+                  {templateEditMode === 'create' ? 'Создание шаблона маршрута' : 'Редактирование маршрута'}
+                </h3>
+                <p className="text-gray-400 text-sm mb-3">
+                  Кликайте по карте, чтобы добавить точки маршрута патрулирования.
+                </p>
+                <p className="text-white/80 text-sm mb-3">Точек: <strong>{templateDraftPath.length}</strong></p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={undoTemplateDraftPoint}
+                    disabled={!templateDraftPath.length}
+                    className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium"
+                  >
+                    Отменить последнюю
+                  </button>
+                </div>
+                <div className="mb-3">
+                  <label className="block text-sm text-gray-400 mb-1">Название шаблона</label>
+                  <input
+                    type="text"
+                    value={templateDraftName}
+                    onChange={(e) => setTemplateDraftName(e.target.value)}
+                    placeholder="Например: Облёт периметра"
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={saveTemplateDraft}
+                    disabled={templateDraftPath.length < 2}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium"
+                  >
+                    Сохранить шаблон
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelTemplateEdit}
+                    className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium"
+                  >
+                    Отмена
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : !hasStarted ? (
             <div className="flex-1 flex items-center justify-center">
-              <WelcomeScreen onStart={handleStart} />
+              <WelcomeScreen
+                onStart={handleStart}
+                templates={missionTemplates}
+                onStartCreateTemplate={startCreateTemplate}
+                onEditTemplateRoute={startEditTemplateRoute}
+                onDeleteTemplate={deleteMissionTemplate}
+              />
             </div>
           ) : (
             <div className="w-full flex flex-col gap-2 flex-1 min-h-0">
@@ -748,6 +954,7 @@ function App() {
                   onMapClick={handleMapClick}
                   selectedDroneId={selectedDroneForSidebar}
                   forceResize={showDroneParking}
+                  previewPath={templateToApplyId ? (missionTemplates.find(t => t.id === templateToApplyId)?.path) ?? null : null}
                 />
               </div>
             </div>
@@ -774,6 +981,10 @@ function App() {
               onDroneClick={handleDroneClick}
               isRouteEditMode={isRouteEditMode}
               onToggleRouteMode={() => setIsRouteEditMode(prev => !prev)}
+              missionTemplates={missionTemplates}
+              templateToApplyId={templateToApplyId}
+              onApplyTemplate={applyTemplateToDrone}
+              onClearTemplateToApply={() => setTemplateToApplyId(null)}
             />
           </div>
         )}
