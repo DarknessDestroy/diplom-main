@@ -462,7 +462,7 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
                     <span className="text-yellow-600">Загрузка поискового сервиса Яндекс...</span>
                 )}
                 {ymapsReady && query.length === 0 && (
-                    <span className="text-gray-500">Введите адрес для поиска</span>
+                    <span className="text-black">Введите адрес для поиска</span>
                 )}
                 {ymapsReady && query.length === 1 && (
                     <span className="text-gray-500">Введите еще 1 символ для подсказок</span>

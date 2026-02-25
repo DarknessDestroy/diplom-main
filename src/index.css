@@ -27,11 +27,16 @@ a:hover {
 body {
   margin: 0;
   background-color: #1f2937;
+  background-image: url('/drones.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
 
 #root {
   min-height: 100vh;
-  background-color: #1f2937;
+  background-color: rgba(31, 41, 55, 0.35);
+  background-blend-mode: multiply;
 }
 
 h1 {

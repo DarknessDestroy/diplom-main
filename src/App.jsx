@@ -771,7 +771,7 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-800 text-white px-3 py-3">
+    <div className="flex flex-col min-h-screen bg-transparent text-white px-3 py-3">
 
       <div className="flex flex-1 gap-3 min-h-0">
         {hasStarted && (
@@ -795,7 +795,7 @@ function App() {
             />
           </div>
         )}
-        <main className="flex-1 bg-gray-700 p-3 rounded flex flex-col min-w-0 min-h-0">
+        <main className="flex-1 bg-transparent p-3 rounded flex flex-col min-w-0 min-h-0">
           {templateEditMode ? (
             <div className="flex-1 flex flex-col min-h-0 relative">
               <div className="flex-1 min-h-0">
@@ -971,13 +971,15 @@ function App() {
         />
       )}
 
-      <footer className="mt-2 bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded text-center text-white">
-        <div className="md:flex-row justify-between items-center">
-          <div>
-            © 2026 Система управления дронами.
+      {hasStarted && (
+        <footer className="mt-2 bg-gradient-to-r from-gray-700 to-gray-800 p-3 rounded text-center text-white">
+          <div className="md:flex-row justify-between items-center">
+            <div>
+              © 2026 Система управления дронами.
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

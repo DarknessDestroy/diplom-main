@@ -88,7 +88,7 @@ export const Sidebar = ({
 
   return (
     <div className="w-80 bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col h-full">
-      <div className="bg-gradient-to-r from-blue-700 to-purple-700 p-4">
+      <div className="bg-gradient-to-r from-gray-700 to-gray-800 p-4">
         <h2 className="text-xl font-bold text-white">Панель управления</h2>
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-2">
