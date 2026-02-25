@@ -345,7 +345,7 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
                             if (query.length < 2 && history.length > 0) setShowHistory(true);
                         }}
                         placeholder="Поиск по адресу или месту"
-                        className="w-full p-3 pl-10 pr-10 rounded-l-lg border border-gray-600 
+                        className="w-full p-3 pl-10 pr-10 rounded-l-lg border border-black 
                                  focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                         disabled={isLoading}
                         autoComplete="off"
@@ -354,7 +354,7 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
                     {/* Иконка поиска слева */}
                     <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
                         <svg
-                            className={`w-5 h-5 ${isLoading ? 'text-blue-500' : 'text-gray-500'}`}
+                            className={`w-5 h-5 ${isLoading ? 'text-blue-500' : 'text-black'}`}
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -406,7 +406,7 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 
                   rounded-lg shadow-lg z-[1010] max-h-64 overflow-y-auto">
                     <div className="flex justify-between items-center px-3 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-                        <span className="text-xs font-medium text-gray-500">История запросов</span>
+                        <span className="text-xs font-medium text-black">История запросов</span>
                         <button
                             type="button"
                             onClick={clearHistory}
@@ -446,7 +446,7 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
                                     {suggestion.name || suggestion.value}
                                 </div>
                                 {suggestion.description && (
-                                    <div className="text-sm text-gray-500 mt-1">
+                                    <div className="text-sm text-black mt-1">
                                         {suggestion.description}
                                     </div>
                                 )}
@@ -465,13 +465,13 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
                     <span className="text-black">Введите адрес для поиска</span>
                 )}
                 {ymapsReady && query.length === 1 && (
-                    <span className="text-gray-500">Введите еще 1 символ для подсказок</span>
+                    <span className="text-black">Введите еще 1 символ для подсказок</span>
                 )}
                 {ymapsReady && query.length >= 2 && suggestions.length === 0 && !isLoading && (
-                    <span className="text-gray-500">Подсказок не найдено</span>
+                    <span className="text-black">Подсказок не найдено</span>
                 )}
                 {ymapsReady && query.length >= 2 && suggestions.length > 0 && (
-                    <span className="text-gray-500">Найдено {suggestions.length} подсказок</span>
+                    <span className="text-black">Найдено {suggestions.length} подсказок</span>
                 )}
             </div>
         </div>
