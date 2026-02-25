@@ -85,6 +85,12 @@ button:hover {
   100% { transform: scale(1) rotate(var(--heading)); }
 }
 
+/* Курсор «прицел» при прокладывании маршрута (карта и дочерние элементы) */
+.cursor-route-edit,
+.cursor-route-edit * {
+  cursor: crosshair !important;
+}
+
 /* Плавное появление панелей при переходе на рабочую область */
 .view-fade-in {
   animation: viewFadeIn 0.35s ease-out forwards;

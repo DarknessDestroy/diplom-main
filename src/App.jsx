@@ -16,6 +16,8 @@ import {
 } from './utils/flightCalculator';
 
 const VIEW_TRANSITION_MS = 300;
+/** Длительность исчезновения боковых панелей при возврате к шаблонам — чуть короче, чтобы не задерживались после карты */
+const EXIT_PANELS_MS = 220;
 
 function App() {
   const [hasStarted, setHasStarted] = useState(false);
@@ -836,7 +838,7 @@ function App() {
             className={`flex-shrink-0 view-fade-in transition-all ease-in-out ${
               exitingToTemplates ? 'opacity-0 pointer-events-none -translate-x-4' : 'opacity-100 translate-x-0'
             }`}
-            style={{ transitionDuration: `${VIEW_TRANSITION_MS}ms` }}
+            style={{ transitionDuration: exitingToTemplates ? `${EXIT_PANELS_MS}ms` : `${VIEW_TRANSITION_MS}ms` }}
           >
             <DroneParking
               drones={drones}
@@ -988,6 +990,7 @@ function App() {
                   onMapClick={handleMapClick}
                   selectedDroneId={selectedDroneForSidebar}
                   forceResize={true}
+                  routeEditMode={isRouteEditMode}
                   previewPath={templateToApplyId ? (missionTemplates.find(t => t.id === templateToApplyId)?.path) ?? null : null}
                 />
               </div>
@@ -1002,7 +1005,7 @@ function App() {
             className={`flex-shrink-0 view-fade-in transition-all ease-in-out ${
               exitingToTemplates ? 'opacity-0 pointer-events-none translate-x-4' : 'opacity-100 translate-x-0'
             }`}
-            style={{ transitionDuration: `${VIEW_TRANSITION_MS}ms` }}
+            style={{ transitionDuration: exitingToTemplates ? `${EXIT_PANELS_MS}ms` : `${VIEW_TRANSITION_MS}ms` }}
           >
             <Sidebar
               dronesData={drones}

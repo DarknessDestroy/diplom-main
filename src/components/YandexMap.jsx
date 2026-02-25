@@ -18,7 +18,9 @@ export function YandexMap({
   /** Маршрут в режиме редактирования (шаблон) — рисуется отдельной линией */
   editingPath = null,
   /** Маршрут для предпросмотра (например выбранный шаблон после «Использовать») */
-  previewPath = null
+  previewPath = null,
+  /** Режим построения маршрута по кликам — курсор «прицел» */
+  routeEditMode = false
 }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -578,16 +580,17 @@ export function YandexMap({
     );
   }
 
-  return (
-    <div className="w-full h-full bg-gray-900 rounded overflow-hidden relative">
+  const cursorAddPoint = placementMode || routeEditMode || (editingPath && editingPath.length >= 0);
 
+  return (
+    <div className={`w-full h-full bg-gray-900 rounded overflow-hidden relative ${cursorAddPoint ? 'cursor-route-edit' : ''}`}>
       <div
         ref={mapContainerRef}
         className="w-full h-full"
         style={{
           height: '100%',
           width: '100%',
-          cursor: placementMode || (editingPath && editingPath.length >= 0) ? 'crosshair' : 'grab',
+          cursor: cursorAddPoint ? 'crosshair' : 'grab',
         }}
       />
     </div>
