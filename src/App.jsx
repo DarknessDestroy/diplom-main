@@ -15,8 +15,11 @@ import {
   calculateBearing
 } from './utils/flightCalculator';
 
+const VIEW_TRANSITION_MS = 300;
+
 function App() {
   const [hasStarted, setHasStarted] = useState(false);
+  const [exitingToTemplates, setExitingToTemplates] = useState(false);
   const [missionTemplates, setMissionTemplates] = useState(() => {
     try {
       const raw = localStorage.getItem(MISSION_TEMPLATES_STORAGE_KEY);
@@ -831,14 +834,25 @@ function App() {
       <div className="flex flex-1 gap-3 min-h-0">
         {/* Левая панель - Стоянка для дронов (скрыта на Welcome Screen) */}
         {hasStarted && (
-          <div className="flex-shrink-0">
+          <div
+            className={`flex-shrink-0 view-fade-in transition-all ease-in-out ${
+              exitingToTemplates ? 'opacity-0 pointer-events-none -translate-x-4' : 'opacity-100 translate-x-0'
+            }`}
+            style={{ transitionDuration: `${VIEW_TRANSITION_MS}ms` }}
+          >
             <DroneParking
               drones={drones}
               showParking={showDroneParking}
               onToggleParking={toggleDroneParking}
               onPlaceDrone={startDronePlacement}
               onRemoveDrone={removeDroneFromMap}
-              onBackToTemplates={() => setHasStarted(false)}
+              onBackToTemplates={() => {
+                setExitingToTemplates(true);
+                setTimeout(() => {
+                  setHasStarted(false);
+                  setExitingToTemplates(false);
+                }, VIEW_TRANSITION_MS);
+              }}
             />
           </div>
         )}
@@ -904,17 +918,30 @@ function App() {
                 </div>
               </div>
             </div>
-          ) : !hasStarted ? (
-            <div className="flex-1 flex items-center justify-center">
-              <ShabloneScreen
-                onStart={handleStart}
-                templates={missionTemplates}
-                onStartCreateTemplate={startCreateTemplate}
-                onEditTemplateRoute={startEditTemplateRoute}
-                onDeleteTemplate={deleteMissionTemplate}
-              />
-            </div>
           ) : (
+            <div className="flex-1 relative min-h-0 overflow-hidden">
+              {/* Слой: экран шаблонов — плавный переход при смене вида */}
+              <div
+                className={`absolute inset-0 flex items-center justify-center transition-all ease-in-out ${
+                  hasStarted && !exitingToTemplates ? 'opacity-0 pointer-events-none -translate-x-4' : 'opacity-100 translate-x-0'
+                }`}
+                style={{ transitionDuration: `${VIEW_TRANSITION_MS}ms` }}
+              >
+                <ShabloneScreen
+                  onStart={handleStart}
+                  templates={missionTemplates}
+                  onStartCreateTemplate={startCreateTemplate}
+                  onEditTemplateRoute={startEditTemplateRoute}
+                  onDeleteTemplate={deleteMissionTemplate}
+                />
+              </div>
+              {/* Слой: рабочая область — плавный переход при смене вида */}
+              <div
+                className={`absolute inset-0 flex flex-col min-h-0 transition-all ease-in-out ${
+                  hasStarted && !exitingToTemplates ? 'opacity-100 translate-x-0' : 'opacity-0 pointer-events-none translate-x-4'
+                }`}
+                style={{ transitionDuration: `${VIEW_TRANSITION_MS}ms` }}
+              >
             <div className="w-full flex flex-col gap-2 flex-1 min-h-0">
               {/* Индикатор режима размещения */}
               {placementMode && droneToPlace && (
@@ -969,11 +996,18 @@ function App() {
                 />
               </div>
             </div>
+              </div>
+            </div>
           )}
         </main>
 
         {hasStarted && (
-          <div className="flex-shrink-0">
+          <div
+            className={`flex-shrink-0 view-fade-in transition-all ease-in-out ${
+              exitingToTemplates ? 'opacity-0 pointer-events-none translate-x-4' : 'opacity-100 translate-x-0'
+            }`}
+            style={{ transitionDuration: `${VIEW_TRANSITION_MS}ms` }}
+          >
             <Sidebar
               dronesData={drones}
               selectedDroneId={selectedDroneForSidebar}
