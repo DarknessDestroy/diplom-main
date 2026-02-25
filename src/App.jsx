@@ -189,11 +189,13 @@ function App() {
   // Выбранный дрон для управления в сайдбаре
   const [selectedDroneForSidebar, setSelectedDroneForSidebar] = useState(null);
 
-  // Если выбран шаблон — при выборе дрона (размещённого на карте) сразу применяем шаблон к нему
+  // Если выбран шаблон — при выборе дрона (размещённого на карте) применяем шаблон к нему.
+  // Не применяем к дрону в полёте, чтобы не прерывать текущую миссию (можно запускать несколько шаблонных миссий для разных дронов).
   useEffect(() => {
     if (!templateToApplyId || selectedDroneForSidebar == null) return;
     const drone = drones.find((d) => d.id === selectedDroneForSidebar);
     if (!drone || !drone.isVisible) return;
+    if (drone.isFlying) return;
     applyTemplateToDrone(selectedDroneForSidebar, templateToApplyId);
   }, [templateToApplyId, selectedDroneForSidebar, drones, applyTemplateToDrone]);
 
