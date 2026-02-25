@@ -938,8 +938,8 @@ function App() {
                 </div>
               )}
 
-              {/* Поиск и геолокация */}
-              <div className="flex flex-col md:flex-row gap-2 mb-2 z-[1000]">
+              {/* Поиск и геолокация — z-index выше карты и погоды, чтобы история/подсказки не перекрывались */}
+              <div className="flex flex-col md:flex-row gap-2 mb-2 relative z-[1100]">
                 <div className="flex-1">
                   <SearchBox
                     setMapCenter={setMapCenter}
@@ -950,7 +950,7 @@ function App() {
 
               {/* Карта */}
               <div className="flex-1 relative min-h-0">
-                <div className="absolute top-2 right-2 z-[1000] flex justify-end">
+                <div className="absolute top-2 right-2 z-[100] flex justify-end">
                   <div className="relative">
                     <WeatherWidget
                       latitude={mapCenter[0]}

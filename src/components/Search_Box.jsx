@@ -1,12 +1,41 @@
 import { useEffect, useRef, useState } from 'react';
 
+const SEARCH_HISTORY_KEY = 'search-history';
+const MAX_HISTORY = 10;
+
 export function SearchBox({ setMapCenter, setMapZoom }) {
     const inputRef = useRef(null);
+    const wrapperRef = useRef(null);
     const [query, setQuery] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [showHistory, setShowHistory] = useState(false);
     const [ymapsReady, setYmapsReady] = useState(false);
+    const [history, setHistory] = useState(() => {
+        try {
+            const raw = localStorage.getItem(SEARCH_HISTORY_KEY);
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed.slice(0, MAX_HISTORY) : [];
+        } catch {
+            return [];
+        }
+    });
+
+    const saveToHistory = (searchText) => {
+        const text = (searchText || '').trim();
+        if (!text) return;
+        setHistory((prev) => {
+            const next = [text, ...prev.filter((item) => item !== text)].slice(0, MAX_HISTORY);
+            try {
+                localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(next));
+            } catch (e) {
+                console.warn('Search history save failed', e);
+            }
+            return next;
+        });
+    };
 
     // Ваш API-ключ Яндекс.Карт
     const API_KEY = '2b39244b-bae4-482a-b3a8-d4b21860b4e8';
@@ -80,6 +109,11 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
 
         document.head.appendChild(fallbackScript);
     };
+
+    // Скрывать историю при вводе (показываем подсказки вместо неё)
+    useEffect(() => {
+        if (query.length >= 2) setShowHistory(false);
+    }, [query]);
 
     // Запрос подсказок при изменении запроса
     useEffect(() => {
@@ -197,6 +231,7 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
             }
 
             setMapZoom(zoom);
+            saveToHistory(searchText);
             console.log(`Found: ${geoObject.properties.get('name')}, zoom: ${zoom}`);
 
         } catch (error) {
@@ -231,6 +266,7 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
 
                 setMapCenter(coordinates);
                 setMapZoom(17);
+                saveToHistory(searchText);
             }
         } catch (error) {
             throw error;
@@ -254,12 +290,28 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
 
             setMapCenter([coordinates[0], coordinates[1]]);
             setMapZoom(15);
+            saveToHistory(searchText);
 
         } catch (error) {
             console.error('Error selecting suggestion:', error);
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleHistorySelect = (historyItem) => {
+        setQuery(historyItem);
+        setShowHistory(false);
+        setShowSuggestions(false);
+        handleSearch(historyItem);
+    };
+
+    const clearHistory = () => {
+        setHistory([]);
+        setShowHistory(false);
+        try {
+            localStorage.removeItem(SEARCH_HISTORY_KEY);
+        } catch {}
     };
 
 
@@ -270,6 +322,7 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
             handleSearch();
         } else if (e.key === 'Escape') {
             setShowSuggestions(false);
+            setShowHistory(false);
         }
     };
 
@@ -283,23 +336,22 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
         }
     };
 
-    // Закрытие подсказок при клике вне компонента
+    // Закрытие подсказок и истории при клике вне компонента
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
                 setShowSuggestions(false);
+                setShowHistory(false);
             }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
 
     return (
-        <div className="w-full mb-2 relative">
+        <div ref={wrapperRef} className="w-full mb-2 relative">
             <div className="flex">
                 {/* Поле ввода с иконкой */}
                 <div className="relative flex-1">
@@ -309,7 +361,10 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        onFocus={() => query.length >= 2 && setShowSuggestions(true)}
+                        onFocus={() => {
+                            if (query.length >= 2) setShowSuggestions(true);
+                            if (query.length < 2 && history.length > 0) setShowHistory(true);
+                        }}
                         placeholder="Поиск по адресу или месту"
                         className="w-full p-3 pl-10 pr-10 rounded-l-lg border border-gray-600 
                                  focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
@@ -367,10 +422,38 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
                 </button>
             </div>
 
-            {/* Всплывающие подсказки */}
-            {showSuggestions && suggestions.length > 0 && (
+            {/* История запросов */}
+            {showHistory && history.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 
-                  rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                  rounded-lg shadow-lg z-[1010] max-h-64 overflow-y-auto">
+                    <div className="flex justify-between items-center px-3 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+                        <span className="text-xs font-medium text-gray-500">История запросов</span>
+                        <button
+                            type="button"
+                            onClick={clearHistory}
+                            className="text-xs text-gray-400 hover:text-red-600"
+                        >
+                            Очистить
+                        </button>
+                    </div>
+                    {history.map((item, index) => (
+                        <div
+                            key={`${item}-${index}`}
+                            onClick={() => handleHistorySelect(item)}
+                            className="w-full text-left p-3 hover:bg-gray-100 border-b border-gray-200 
+                             last:border-b-0 flex items-center gap-2 cursor-pointer"
+                        >
+                            <span className="text-gray-400 text-sm">🕐</span>
+                            <span className="font-medium text-gray-800">{item}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Всплывающие подсказки */}
+            {showSuggestions && suggestions.length > 0 && !showHistory && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 
+                  rounded-lg shadow-lg z-[1010] max-h-64 overflow-y-auto">
                     {suggestions.map((suggestion, index) => (
                         <div
                             key={index}
