@@ -5,6 +5,7 @@ import { ShabloneScreen } from './components/Shablone_Screen';
 import { YandexMap } from './components/YandexMap';
 import { DroneModal } from './components/Drone_OnClick_List_Sidebar';
 import { DroneParking } from './components/Drone_Parking';
+import { WeatherWidget } from './components/WeatherWidget';
 import { dronesData, initialMapCenter, flightStatus } from './constants/drones_data';
 import { MISSION_TEMPLATES_STORAGE_KEY } from './constants/mission';
 import {
@@ -949,6 +950,14 @@ function App() {
 
               {/* Карта */}
               <div className="flex-1 relative min-h-0">
+                <div className="absolute top-2 right-2 z-[1000] flex justify-end">
+                  <div className="relative">
+                    <WeatherWidget
+                      latitude={mapCenter[0]}
+                      longitude={mapCenter[1]}
+                    />
+                  </div>
+                </div>
                 <YandexMap
                   drones={drones.filter(d => d.isVisible)}
                   mapCenter={mapCenter}
