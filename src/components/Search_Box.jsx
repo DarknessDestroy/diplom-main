@@ -37,47 +37,30 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
         });
     };
 
-    // Ваш API-ключ Яндекс.Карт
     const API_KEY = '2b39244b-bae4-482a-b3a8-d4b21860b4e8';
 
-    // Инициализация Яндекс.Карт с API-ключом
     useEffect(() => {
-        // Если Яндекс уже загружен
         if (window.ymaps && window.yandexMapsLoaded) {
-            window.ymaps.ready(() => {
-                setYmapsReady(true);
-                console.log('Yandex Maps API already loaded');
-            });
+            window.ymaps.ready(() => setYmapsReady(true));
             return;
         }
-
-        // Проверяем, не загружается ли уже
         if (window.yandexMapsLoading) return;
         window.yandexMapsLoading = true;
-
-        // Загружаем API Яндекс.Карт с ключом
         const script = document.createElement('script');
         script.src = `https://api-maps.yandex.ru/2.1/?apikey=${API_KEY}&lang=ru_RU`;
         script.async = true;
 
         script.onload = () => {
-            if (!window.ymaps) {
-                console.error('Yandex Maps API object not created');
-                return;
-            }
-
+            if (!window.ymaps) return;
             window.ymaps.ready(() => {
-                console.log('Yandex Maps API loaded with key');
                 setYmapsReady(true);
                 window.yandexMapsLoaded = true;
                 window.yandexMapsLoading = false;
             });
         };
 
-        script.onerror = (error) => {
-            console.error('Failed to load Yandex Maps API:', error);
+        script.onerror = () => {
             window.yandexMapsLoading = false;
-            // Пробуем загрузить без ключа как fallback
             loadYmapsWithoutKey();
         };
 
@@ -90,7 +73,6 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
         };
     }, []);
 
-    // Fallback: загрузка без ключа
     const loadYmapsWithoutKey = () => {
         const fallbackScript = document.createElement('script');
         fallbackScript.src = 'https://api-maps.yandex.ru/2.1/?lang=ru_RU';
@@ -99,7 +81,6 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
         fallbackScript.onload = () => {
             if (window.ymaps) {
                 window.ymaps.ready(() => {
-                    console.log('Yandex Maps API loaded without key');
                     setYmapsReady(true);
                     window.yandexMapsLoaded = true;
                     window.yandexMapsLoading = false;
@@ -110,12 +91,10 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
         document.head.appendChild(fallbackScript);
     };
 
-    // Скрывать историю при вводе (показываем подсказки вместо неё)
     useEffect(() => {
         if (query.length >= 2) setShowHistory(false);
     }, [query]);
 
-    // Запрос подсказок при изменении запроса
     useEffect(() => {
         if (!ymapsReady || query.length < 2) {
             setSuggestions([]);

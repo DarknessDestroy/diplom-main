@@ -9,7 +9,6 @@ export const DroneParking = ({
   const placedDrones = drones.filter(d => d.isVisible);
   const availableDrones = drones.filter(d => !d.isVisible);
 
-  // Функция для получения цвета статуса
   const getStatusColor = (drone) => {
     if (!drone.isVisible) return 'bg-gray-700';
     
@@ -28,7 +27,6 @@ export const DroneParking = ({
     }
   };
 
-  // Функция для получения иконки статуса
   const getStatusIcon = (drone) => {
     if (!drone.isVisible) return '📦';
     
@@ -47,7 +45,6 @@ export const DroneParking = ({
     }
   };
 
-  // Функция для получения текста статуса
   const getStatusText = (drone) => {
     if (!drone.isVisible) return 'В ангаре';
     
@@ -70,7 +67,6 @@ export const DroneParking = ({
   return (
     <div className="flex flex-shrink-0 w-72">
       <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden h-full flex flex-col w-full">
-        {/* Заголовок */}
         <div className="bg-gradient-to-r from-gray-700 to-gray-800 p-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold text-white">Стоянка для дронов</h2>
@@ -82,10 +78,7 @@ export const DroneParking = ({
                 </span>
               </div>
             </div>
-
-            {/* Контент */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* Размещенные дроны */}
               {placedDrones.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold text-white mb-3">
@@ -169,8 +162,6 @@ export const DroneParking = ({
                   </div>
                 </div>
               )}
-
-              {/* Если нет дронов */}
               {drones.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   <div className="text-4xl mb-2">🛸</div>
@@ -178,8 +169,6 @@ export const DroneParking = ({
                 </div>
               )}
             </div>
-
-            {/* Кнопка возврата к шаблонам — внизу панели, возле Footer */}
             {onBackToTemplates && (
               <div className="flex-shrink-0 p-4 pt-2 border-t border-gray-700">
                 <button

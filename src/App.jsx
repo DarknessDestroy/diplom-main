@@ -16,7 +16,6 @@ import {
 } from './utils/flightCalculator';
 
 const VIEW_TRANSITION_MS = 300;
-/** Длительность исчезновения боковых панелей при возврате к шаблонам — чуть короче, чтобы не задерживались после карты */
 const EXIT_PANELS_MS = 220;
 
 function App() {
@@ -38,8 +37,7 @@ function App() {
     }
   });
 
-  // Режим рисования маршрута шаблона на карте (на Welcome Screen)
-  const [templateEditMode, setTemplateEditMode] = useState(null); // null | 'create' | { type: 'edit', id }
+  const [templateEditMode, setTemplateEditMode] = useState(null);
   const [templateDraftPath, setTemplateDraftPath] = useState([]);
   const [templateDraftName, setTemplateDraftName] = useState('');
 
@@ -97,7 +95,6 @@ function App() {
     setTemplateDraftPath((prev) => (prev.length ? prev.slice(0, -1) : []));
   }, []);
 
-  // Шаблон, выбранный для применения к дрону после «Использовать» на Welcome
   const [templateToApplyId, setTemplateToApplyId] = useState(null);
   const computeMissionParamsFromPath = useCallback((path, maxSpeed = 70, battery = 100) => {
     if (!path || path.length < 2) return null;
@@ -184,18 +181,11 @@ function App() {
   const [globalMissionLog, setGlobalMissionLog] = useState([]);
   const activeTimersRef = useRef(new Map());
 
-  // Состояния для режима размещения дрона
   const [placementMode, setPlacementMode] = useState(false);
   const [droneToPlace, setDroneToPlace] = useState(null);
-
-  // Режим построения маршрута для выбранного дрона
   const [isRouteEditMode, setIsRouteEditMode] = useState(false);
-
-  // Выбранный дрон для управления в сайдбаре
   const [selectedDroneForSidebar, setSelectedDroneForSidebar] = useState(null);
 
-  // Если выбран шаблон — при выборе дрона (размещённого на карте) применяем шаблон к нему.
-  // Не применяем к дрону в полёте, чтобы не прерывать текущую миссию (можно запускать несколько шаблонных миссий для разных дронов).
   useEffect(() => {
     if (!templateToApplyId || selectedDroneForSidebar == null) return;
     const drone = drones.find((d) => d.id === selectedDroneForSidebar);
@@ -204,20 +194,13 @@ function App() {
     applyTemplateToDrone(selectedDroneForSidebar, templateToApplyId);
   }, [templateToApplyId, selectedDroneForSidebar, drones, applyTemplateToDrone]);
 
-
-  // Начать размещение дрона (выбрать дрон для размещения)
   const startDronePlacement = (droneId) => {
-    console.log('Начинаем размещение дрона:', droneId);
     setDroneToPlace(droneId);
     setPlacementMode(true);
   };
 
-  // Разместить дрон на карте по клику
   const placeDroneOnMap = (latlng) => {
     if (!droneToPlace || !placementMode) return;
-
-    console.log('Размещение дрона на координатах:', latlng);
-
     const drone = drones.find(d => d.id === droneToPlace);
     if (!drone) return;
 
@@ -246,37 +229,25 @@ function App() {
         };
       })
     );
-
-    // Выбираем этого дрона для управления в сайдбаре
     setSelectedDroneForSidebar(droneToPlace);
     setMapCenter([positionToSet.lat, positionToSet.lng]);
-
-    // Сбрасываем режим размещения
     setPlacementMode(false);
     setDroneToPlace(null);
-
-    console.log(`✅ Дрон "${drone.name}" размещен на координатах:`, positionToSet);
-
-    // Добавляем в лог - исправляем формат coordinates
     addToGlobalLog(droneToPlace, `🛸 Дрон "${drone.name}" размещен на карте`, {
       coordinates: `lat: ${positionToSet.lat.toFixed(6)}, lng: ${positionToSet.lng.toFixed(6)}`
     });
   };
 
-  // Отменить размещение дрона
   const cancelDronePlacement = () => {
     setPlacementMode(false);
     setDroneToPlace(null);
   };
 
-  // Убрать дрон с карты
   const removeDroneFromMap = (droneId) => {
-    // Останавливаем полет дрона если он активен
     if (drones.find(d => d.id === droneId)?.flightStatus === flightStatus.FLYING) {
       stopDroneFlight(droneId);
     }
 
-    // Очищаем таймер если есть
     const timerId = activeTimersRef.current.get(droneId);
     if (timerId) {
       clearInterval(timerId);
@@ -302,35 +273,24 @@ function App() {
         };
       })
     );
-
-    // Если это был выбранный дрон, снимаем выбор и выходим из режима построения маршрута
     if (selectedDroneForSidebar === droneId) {
       setSelectedDroneForSidebar(null);
       setIsRouteEditMode(false);
     }
-
-    // Логируем удаление
     if (drone) {
       addToGlobalLog(droneId, `🗑️ Дрон "${drone.name}" убран с карты`);
     }
   };
 
-  // Обработка клика по карте
   const handleMapClick = (latlng) => {
-    // Режим рисования маршрута шаблона (Welcome Screen)
     if (templateEditMode) {
       addTemplateDraftPoint(latlng);
       return;
     }
-
-    // Если в режиме размещения дрона
     if (placementMode && droneToPlace) {
       placeDroneOnMap(latlng);
       return;
     }
-
-    // Если есть выбранный дрон в сайдбаре, он не в полете
-    // и включен режим построения маршрута
     if (selectedDroneForSidebar !== null && isRouteEditMode) {
       const drone = drones.find(d => d.id === selectedDroneForSidebar);
       if (drone && !drone.isFlying) {
@@ -339,7 +299,6 @@ function App() {
     }
   };
 
-  // Добавление точки маршрута
   const addRoutePoint = (droneId, latlng) => {
     setDrones(prev =>
       prev.map(d =>
@@ -349,8 +308,6 @@ function App() {
         } : d
       )
     );
-
-    // Пересчитываем параметры миссии
     setTimeout(() => {
       const missionParams = calculateMissionParameters(droneId);
       if (missionParams) {
@@ -363,8 +320,6 @@ function App() {
             };
           })
         );
-
-        // Логируем добавление точки - исправляем формат
         addToDroneLog(droneId, '📍 Добавлена точка маршрута', {
           pointNumber: drones.find(d => d.id === droneId)?.path?.length || 0,
           coordinates: `lat: ${latlng.lat.toFixed(6)}, lng: ${latlng.lng.toFixed(6)}`
@@ -386,7 +341,6 @@ function App() {
       )
     );
 
-    // Логируем отмену
     addToDroneLog(droneId, '↩️ Отменена последняя точка маршрута');
   };
 
@@ -406,8 +360,6 @@ function App() {
         } : d
       )
     );
-
-    // Логируем очистку
     addToDroneLog(droneId, '🗑️ Маршрут очищен');
   };
 
@@ -465,8 +417,6 @@ function App() {
         };
       })
     );
-
-    // Преобразуем объект data в строки для безопасного рендеринга
     const safeData = {};
     Object.keys(data).forEach(key => {
       if (typeof data[key] === 'object' && data[key] !== null) {
@@ -481,8 +431,6 @@ function App() {
 
   const addToGlobalLog = (droneId, message, data = {}) => {
     const drone = drones.find(d => d.id === droneId);
-
-    // Преобразуем объект data в строки для безопасного рендеринга
     const safeData = {};
     Object.keys(data).forEach(key => {
       if (typeof data[key] === 'object' && data[key] !== null) {
@@ -523,13 +471,10 @@ function App() {
       alert(`Недостаточно заряда батареи. Требуется минимум ${missionParams.batteryConsumption + 10}%, доступно: ${drone.battery}%`);
       return;
     }
-
-    // Выключаем режим построения маршрута при старте полета
     if (selectedDroneForSidebar === droneId && isRouteEditMode) {
       setIsRouteEditMode(false);
     }
 
-    // Устанавливаем статус взлета
     setDrones(prev =>
       prev.map(d => {
         if (d.id !== droneId) return d;
@@ -561,8 +506,6 @@ function App() {
       totalDistance: missionParams.totalDistance,
       estimatedTime: missionParams.estimatedTime
     });
-
-    // Имитация взлета
     setTimeout(() => {
       setDrones(prev =>
         prev.map(d => {
@@ -824,7 +767,6 @@ function App() {
   };
 
   const handleDroneClick = (drone) => {
-    console.log('Дрон кликнут:', drone);
     setSelectedDroneForModal(drone);
   };
 
@@ -832,7 +774,6 @@ function App() {
     <div className="flex flex-col min-h-screen bg-gray-800 text-white px-3 py-3">
 
       <div className="flex flex-1 gap-3 min-h-0">
-        {/* Левая панель - Стоянка для дронов (скрыта на Welcome Screen) */}
         {hasStarted && (
           <div
             className={`flex-shrink-0 view-fade-in transition-all ease-in-out ${
@@ -854,8 +795,6 @@ function App() {
             />
           </div>
         )}
-
-        {/* Основной контент */}
         <main className="flex-1 bg-gray-700 p-3 rounded flex flex-col min-w-0 min-h-0">
           {templateEditMode ? (
             <div className="flex-1 flex flex-col min-h-0 relative">
@@ -918,7 +857,6 @@ function App() {
             </div>
           ) : (
             <div className="flex-1 relative min-h-0 overflow-hidden">
-              {/* Слой: экран шаблонов — плавный переход при смене вида */}
               <div
                 className={`absolute inset-0 flex items-center justify-center transition-all ease-in-out ${
                   hasStarted && !exitingToTemplates ? 'opacity-0 pointer-events-none -translate-x-4' : 'opacity-100 translate-x-0'
@@ -933,7 +871,6 @@ function App() {
                   onDeleteTemplate={deleteMissionTemplate}
                 />
               </div>
-              {/* Слой: рабочая область — плавный переход при смене вида */}
               <div
                 className={`absolute inset-0 flex flex-col min-h-0 transition-all ease-in-out ${
                   hasStarted && !exitingToTemplates ? 'opacity-100 translate-x-0' : 'opacity-0 pointer-events-none translate-x-4'
@@ -941,7 +878,6 @@ function App() {
                 style={{ transitionDuration: `${VIEW_TRANSITION_MS}ms` }}
               >
             <div className="w-full flex flex-col gap-2 flex-1 min-h-0">
-              {/* Индикатор режима размещения */}
               {placementMode && droneToPlace && (
                 <div className="bg-yellow-900/70 border border-yellow-500 rounded-lg p-3 mb-2 animate-pulse">
                   <div className="flex items-center justify-between">
@@ -949,7 +885,10 @@ function App() {
                       <div>
                         <p className="text-sm text-yellow-200">
                           Кликните на карте, чтобы разместить дрон
-                          {drones.find(d => d.id === droneToPlace) && ` "${drones.find(d => d.id === droneToPlace).name}"`}
+                          {(() => {
+                            const d = drones.find(d => d.id === droneToPlace);
+                            return d ? ` "${d.name}"` : '';
+                          })()}
                         </p>
                       </div>
                     </div>
@@ -962,8 +901,6 @@ function App() {
                   </div>
                 </div>
               )}
-
-              {/* Поиск и геолокация — z-index выше карты и погоды, чтобы история/подсказки не перекрывались */}
               <div className="flex flex-col md:flex-row gap-2 mb-2 relative z-[1100]">
                 <div className="flex-1">
                   <SearchBox
@@ -972,8 +909,6 @@ function App() {
                   />
                 </div>
               </div>
-
-              {/* Карта */}
               <div className="flex-1 relative min-h-0">
                 <div className="absolute top-2 right-2 z-[100] flex justify-end">
                   <div className="relative">
@@ -1029,8 +964,6 @@ function App() {
           </div>
         )}
       </div>
-
-      {/* Модальное окно с деталями дрона */}
       {selectedDroneForModal && (
         <DroneModal
           drone={selectedDroneForModal}

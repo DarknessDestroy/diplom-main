@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 
-// Глобальные флаги для API Яндекс.Карт
 if (typeof window !== 'undefined') {
   if (!window.yandexMapsLoading) window.yandexMapsLoading = false;
   if (!window.yandexMapsLoaded) window.yandexMapsLoaded = false;
@@ -15,17 +14,14 @@ export function YandexMap({
   placementMode = false,
   selectedDroneId = null,
   forceResize = false,
-  /** Маршрут в режиме редактирования (шаблон) — рисуется отдельной линией */
   editingPath = null,
-  /** Маршрут для предпросмотра (например выбранный шаблон после «Использовать») */
   previewPath = null,
-  /** Режим построения маршрута по кликам — курсор «прицел» */
   routeEditMode = false
 }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
-  const droneMarkersRef = useRef({}); // Храним маркеры дронов по id
-  const routePolylinesRef = useRef({}); // Храним линии маршрутов
+  const droneMarkersRef = useRef({});
+  const routePolylinesRef = useRef({});
   const editingPolylineRef = useRef(null);
   const previewPolylineRef = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -35,7 +31,6 @@ export function YandexMap({
 
   const API_KEY = '2b39244b-bae4-482a-b3a8-d4b21860b4e8';
 
-  // 1️⃣ Загрузка API Яндекс.Карт
   useEffect(() => {
     if (window.ymaps && window.yandexMapsLoaded) {
       setTimeout(initMap, 100);
@@ -76,7 +71,6 @@ export function YandexMap({
     document.head.appendChild(script);
   }, []);
 
-  // 2️⃣ Инициализация карты
   const initMap = () => {
     if (!mapContainerRef.current || !window.ymaps) return;
     if (mapInstanceRef.current) return;
@@ -84,7 +78,6 @@ export function YandexMap({
     const map = new window.ymaps.Map(mapContainerRef.current, {
       center: mapCenter || [55.751244, 37.618423],
       zoom: mapZoom,
-      // Отключаем кнопку разворота карты на весь экран
       controls: [],
     });
 
@@ -92,14 +85,10 @@ export function YandexMap({
     lastMapCenterRef.current = mapCenter;
     lastMapZoomRef.current = mapZoom;
     setMapLoaded(true);
-
-    // Инициализируем объекты дронов
     drones.forEach(drone => {
       if (!drone.position) return;
       createDroneMarker(map, drone);
     });
-
-    // Рисуем маршруты
     drones.forEach(drone => {
       if (drone.path && drone.path.length > 1) {
         createDroneRoute(map, drone);
@@ -107,7 +96,6 @@ export function YandexMap({
     });
   };
 
-  // Создание маркера дрона
   const createDroneMarker = (map, drone) => {
     if (!drone.position || !drone.isVisible) return;
 
@@ -134,8 +122,6 @@ export function YandexMap({
         hideIconOnBalloonOpen: false
       }
     );
-
-    // Обработка перетаскивания
     if (drone.status !== 'в полете') {
       placemark.events.add('dragend', (e) => {
         const coords = e.get('target').geometry.getCoordinates();
@@ -149,11 +135,8 @@ export function YandexMap({
     droneMarkersRef.current[drone.id] = placemark;
   };
 
-  // Создание маршрута дрона
   const createDroneRoute = (map, drone) => {
     if (!drone.path || drone.path.length < 2) return;
-
-    // Удаляем старый маршрут, если есть
     if (routePolylinesRef.current[drone.id]) {
       map.geoObjects.remove(routePolylinesRef.current[drone.id]);
     }
@@ -172,49 +155,36 @@ export function YandexMap({
     routePolylinesRef.current[drone.id] = polyline;
   };
 
-  // 3️⃣ Обновление положения дронов (без смены центра карты)
   useEffect(() => {
     if (!mapLoaded || !mapInstanceRef.current) return;
 
     const map = mapInstanceRef.current;
-
-    // Обновляем существующие маркеры дронов
     drones.forEach(drone => {
       const existingMarker = droneMarkersRef.current[drone.id];
 
       if (drone.isVisible && drone.position) {
         if (existingMarker) {
-          // Обновляем положение существующего маркера
           existingMarker.geometry.setCoordinates([drone.position.lat, drone.position.lng]);
         } else {
-          // Создаем новый маркер
           createDroneMarker(map, drone);
         }
       } else if (existingMarker) {
-        // Удаляем маркер если дрон не видим
         map.geoObjects.remove(existingMarker);
         delete droneMarkersRef.current[drone.id];
       }
-
-      // Обновляем маршруты
       if (drone.path && drone.path.length > 1) {
         createDroneRoute(map, drone);
       } else if (routePolylinesRef.current[drone.id]) {
-        // Удаляем маршрут если его нет
         map.geoObjects.remove(routePolylinesRef.current[drone.id]);
         delete routePolylinesRef.current[drone.id];
       }
     });
-
-    // Удаляем маркеры дронов, которых больше нет в списке
     Object.keys(droneMarkersRef.current).forEach(droneId => {
       if (!drones.some(d => d.id.toString() === droneId)) {
         map.geoObjects.remove(droneMarkersRef.current[droneId]);
         delete droneMarkersRef.current[droneId];
       }
     });
-
-    // Удаляем маршруты дронов, которых больше нет в списке
     Object.keys(routePolylinesRef.current).forEach(droneId => {
       if (!drones.some(d => d.id.toString() === droneId)) {
         map.geoObjects.remove(routePolylinesRef.current[droneId]);
@@ -222,9 +192,8 @@ export function YandexMap({
       }
     });
 
-  }, [drones, selectedDroneId, mapLoaded]); // Убрал mapCenter и mapZoom из зависимостей
+  }, [drones, selectedDroneId, mapLoaded]);
 
-  // Маршрут в режиме редактирования (шаблон миссии)
   useEffect(() => {
     if (!mapLoaded || !mapInstanceRef.current || !window.ymaps) return;
     const map = mapInstanceRef.current;
@@ -251,7 +220,6 @@ export function YandexMap({
     };
   }, [mapLoaded, editingPath]);
 
-  // Предпросмотр маршрута (выбранный шаблон на главном экране)
   useEffect(() => {
     if (!mapLoaded || !mapInstanceRef.current || !window.ymaps) return;
     const map = mapInstanceRef.current;
@@ -277,9 +245,6 @@ export function YandexMap({
       }
     };
   }, [mapLoaded, previewPath]);
-
-  // В YandexMap.jsx добавьте анимацию для летящего дрона
-  // В функции обновления маркеров дронов добавьте:
 
   const createDroneIcon = (drone, isActive = false) => {
     const color = getDroneColor(drone.id);
@@ -349,12 +314,8 @@ export function YandexMap({
     });
   };
 
-
-  // 4️⃣ Обновление центра и зума карты (только при поиске)
   useEffect(() => {
     if (!mapLoaded || !mapInstanceRef.current || !mapCenter) return;
-
-    // Обновляем только если центр действительно изменился (поиск)
     const shouldUpdateCenter =
       lastMapCenterRef.current[0] !== mapCenter[0] ||
       lastMapCenterRef.current[1] !== mapCenter[1];
@@ -373,7 +334,6 @@ export function YandexMap({
     }
   }, [mapCenter, mapZoom, mapLoaded]);
 
-  // 5️⃣ Обработчик клика по карте
   useEffect(() => {
     if (!mapLoaded || !mapInstanceRef.current) return;
 
@@ -390,7 +350,6 @@ export function YandexMap({
     return () => map.events.remove('click', handleClick);
   }, [onMapClick, mapLoaded]);
 
-  // 6️⃣ Обновление размера карты при изменении размера контейнера
   useEffect(() => {
     if (!mapLoaded || !mapInstanceRef.current || !mapContainerRef.current) return;
 
@@ -403,11 +362,9 @@ export function YandexMap({
           const height = container.offsetHeight;
           
           if (width > 0 && height > 0) {
-            // Используем встроенный метод Яндекс.Карт для обновления размера
             map.container.fitToViewport();
           }
         } catch (error) {
-          // Альтернативный метод через setSize
           try {
             const map = mapInstanceRef.current;
             const container = mapContainerRef.current;
@@ -425,11 +382,7 @@ export function YandexMap({
         }
       }
     };
-
-    // Обновляем размер при изменении размера окна
     window.addEventListener('resize', updateMapSize);
-
-    // Используем ResizeObserver для отслеживания изменений размера контейнера
     let resizeObserver = null;
     if (mapContainerRef.current && window.ResizeObserver) {
       resizeObserver = new ResizeObserver(() => {
@@ -438,7 +391,6 @@ export function YandexMap({
       });
       resizeObserver.observe(mapContainerRef.current);
     } else {
-      // Fallback: периодическая проверка размера
       const intervalId = setInterval(() => {
         if (mapContainerRef.current && mapInstanceRef.current) {
           updateMapSize();
@@ -462,11 +414,8 @@ export function YandexMap({
     };
   }, [mapLoaded]);
 
-  // 6.5️⃣ Принудительное обновление размера при изменении forceResize
   useEffect(() => {
     if (!mapLoaded || !mapInstanceRef.current || !mapContainerRef.current) return;
-    
-    // Задержка для завершения CSS-анимаций при скрытии/показе стоянки
     const timeoutId = setTimeout(() => {
       if (mapInstanceRef.current && mapContainerRef.current) {
         try {
@@ -494,8 +443,7 @@ export function YandexMap({
           }
         }
       }
-    }, 350); // Задержка чуть больше, чем длительность CSS-анимации (300ms)
-
+    }, 350);
     return () => clearTimeout(timeoutId);
   }, [forceResize, mapLoaded]);
 
@@ -519,19 +467,15 @@ export function YandexMap({
         });
       });
     };
-
-    // Вызываем удаление после небольшой задержки, чтобы элементы успели появиться
     const timeoutId = setTimeout(removeYandexElements, 500); 
 
     return () => clearTimeout(timeoutId);
   }, [mapLoaded]);
 
-  // 8️⃣ Очистка при размонтировании
   useEffect(() => {
     return () => {
       if (mapInstanceRef.current) {
         try {
-          // Удаляем все маркеры
           Object.values(droneMarkersRef.current).forEach(marker => {
             try { mapInstanceRef.current.geoObjects.remove(marker); } catch { }
           });

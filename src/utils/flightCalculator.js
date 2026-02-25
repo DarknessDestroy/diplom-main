@@ -1,6 +1,5 @@
-// Расчет расстояния между двумя точками (в метрах)
 export const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371000; // Радиус Земли в метрах
+  const R = 6371000;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = 
@@ -11,8 +10,6 @@ export const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
-// Расчет времени полета на основе расстояния и скорости
-// distance — метры, speed — м/с, результат — секунды
 export const calculateFlightTime = (distance, speed) => {
   if (speed <= 0) return 0;
   return distance / speed;
@@ -26,7 +23,6 @@ export const getIntermediatePoint = (start, end, progress) => {
   return [lat, lng];
 };
 
-// Расчет азимута (направления) между двумя точками
 export const calculateBearing = (lat1, lon1, lat2, lon2) => {
   const φ1 = lat1 * Math.PI / 180;
   const φ2 = lat2 * Math.PI / 180;
@@ -39,10 +35,8 @@ export const calculateBearing = (lat1, lon1, lat2, lon2) => {
   return (θ * 180 / Math.PI + 360) % 360;
 };
 
-// Расчет оптимальной скорости для маршрута
 export const calculateOptimalSpeed = (distance, maxSpeed = 15) => {
-  // В м/с, для демо используем 15 м/с (54 км/ч) максимум
-  if (distance < 100) return 5; // Медленно для коротких расстояний
+  if (distance < 100) return 5;
   if (distance < 1000) return 10;
   return maxSpeed;
 };

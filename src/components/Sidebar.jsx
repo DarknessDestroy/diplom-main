@@ -24,22 +24,17 @@ export const Sidebar = ({
   const [activeTab, setActiveTab] = useState('control');
 
   const visibleDrones = dronesData.filter(d => d.isVisible);
-
-  // Если selectedDroneId не задан, выбираем первого размещённого дрона автоматически
   const selectedDrone =
     visibleDrones.find(d => d.id === selectedDroneId) || visibleDrones[0] || null;
 
   const flyingDrones = visibleDrones.filter(d => d.isFlying);
-  const idleDrones = visibleDrones.filter(d => !d.isFlying);
 
-  // Цвет прогресса
   const getProgressColor = (progress) => {
     if (progress < 30) return 'bg-red-500';
     if (progress < 70) return 'bg-yellow-500';
     return 'bg-green-500';
   };
 
-  // Цвет статуса
   const getStatusColor = (drone) => {
     switch (drone.flightStatus) {
       case flightStatus.FLYING: return 'border-green-500 bg-green-900/20';
@@ -51,7 +46,6 @@ export const Sidebar = ({
     }
   };
 
-  // Секунды → "минуты:секунды" (например 1:30)
   const formatTimeSeconds = (seconds) => {
     const sec = Math.floor(Number(seconds) || 0);
     const m = Math.floor(sec / 60);
@@ -59,7 +53,6 @@ export const Sidebar = ({
     return `${m}:${String(s).padStart(2, '0')}`;
   };
 
-  // Оценка времени полёта по маршруту (в секундах), чтобы не зависеть от устаревших missionParameters
   const estimatedTimeSec = useMemo(() => {
     if (!selectedDrone?.path || selectedDrone.path.length < 2) return null;
     let totalDistance = 0;
@@ -73,7 +66,6 @@ export const Sidebar = ({
     return Math.round(calculateFlightTime(totalDistance, speed));
   }, [selectedDrone?.path, selectedDrone?.maxSpeed]);
 
-  // Статус текстом
   const getStatusText = (drone) => {
     switch (drone.flightStatus) {
       case flightStatus.FLYING: return 'В полете';
@@ -85,12 +77,9 @@ export const Sidebar = ({
       default: return drone.flightStatus;
     }
   };
-
-  // Безопасные значения для выбранного дрона
   const selectedDronePathLength = selectedDrone?.path?.length || 0;
   const selectedDroneStatus = selectedDrone?.flightStatus || flightStatus.IDLE;
 
-  // Авто выбор дрона при монтировании
   useEffect(() => {
     if (!selectedDroneId && visibleDrones.length > 0 && onSelectDrone) {
       onSelectDrone(visibleDrones[0].id);
@@ -99,7 +88,6 @@ export const Sidebar = ({
 
   return (
     <div className="w-80 bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col h-full">
-      {/* Заголовок */}
       <div className="bg-gradient-to-r from-blue-700 to-purple-700 p-4">
         <h2 className="text-xl font-bold text-white">Панель управления</h2>
         <div className="flex items-center justify-between mt-2">
@@ -120,8 +108,6 @@ export const Sidebar = ({
           )}
         </div>
       </div>
-
-      {/* Табы */}
       <div className="flex border-b border-gray-700">
         <button
           className={`flex-1 py-3 text-center font-medium transition-colors ${activeTab === 'control'
@@ -147,12 +133,9 @@ export const Sidebar = ({
           )}
         </button>
       </div>
-
-      {/* Контент табов */}
       <div className="flex-1 overflow-y-auto p-4">
         {activeTab === 'control' && (
           <div className="space-y-4">
-            {/* Если нет размещённых дронов */}
             {visibleDrones.length === 0 && (
               <div className="text-center py-10 text-gray-400">
                 <div className="text-4xl mb-3">🛸</div>
@@ -162,8 +145,6 @@ export const Sidebar = ({
                 </p>
               </div>
             )}
-
-            {/* Список дронов */}
             {visibleDrones.length > 0 && (
               <div className="space-y-2">
                 {visibleDrones.map(drone => (
@@ -215,15 +196,11 @@ export const Sidebar = ({
                 ))}
               </div>
             )}
-
-            {/* Управление выбранным дроном */}
             {selectedDrone && (
               <div className="border-t border-gray-700 pt-4">
                 <h3 className="text-lg font-semibold text-white mb-3">
                   Управление: {selectedDrone.name}
                 </h3>
-
-                {/* Статус */}
                 <div className={`p-3 rounded-lg border ${getStatusColor(selectedDrone)} mb-4`}>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="text-gray-400">Статус:</div>
@@ -244,8 +221,6 @@ export const Sidebar = ({
                     </div>
                   </div>
                 </div>
-
-                {/* Управление маршрутом */}
                 <div className="space-y-2">
                   <h4 className="font-semibold text-white">Маршрутизация</h4>
 
@@ -303,12 +278,9 @@ export const Sidebar = ({
                       )}
                     </>
                   )}
-
-                  {/* Управление полетом */}
                   <div className="mt-4">
                     <h4 className="font-semibold text-white mb-2">Управление полетом</h4>
                     <div className="grid grid-cols-2 gap-2">
-                      {/* Кнопки для разных статусов */}
                       {selectedDroneStatus === flightStatus.IDLE && selectedDronePathLength >= 2 && (
                         <button
                           onClick={() => onStartFlight(selectedDrone.id)}
@@ -385,7 +357,6 @@ export const Sidebar = ({
 
         {activeTab === 'logs' && (
           <div className="space-y-4">
-            {/* Логи */}
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-white">Журнал событий</h3>
               {missionLog.length > 0 && (
@@ -438,8 +409,6 @@ export const Sidebar = ({
           </div>
         )}
       </div>
-
-      {/* Футер */}
       <div className="p-3 bg-gray-900 border-t border-gray-700">
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="p-2 bg-gray-800/50 rounded">
