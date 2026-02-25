@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 /**
- * Welcome Screen — управление шаблонами маршрутов патрулирования.
+ * Shablone Screen — управление шаблонами маршрутов патрулирования.
  * Шаблон = заранее построенный маршрут (название + точки на карте).
  * @param {{
  *   onStart: (templateId?: string) => void;
@@ -11,7 +11,7 @@ import { useState } from 'react';
  *   onDeleteTemplate: (id: string) => void;
  * }} props
  */
-export function WelcomeScreen({
+export function ShabloneScreen({
   onStart,
   templates,
   onStartCreateTemplate,

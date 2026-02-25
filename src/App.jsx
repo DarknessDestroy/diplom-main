@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { SearchBox } from './components/Search_Box';
 import { Sidebar } from './components/Sidebar';
-import { WelcomeScreen } from './components/Welcome_Screen';
+import { ShabloneScreen } from './components/Shablone_Screen';
 import { YandexMap } from './components/YandexMap';
 import { DroneModal } from './components/Drone_OnClick_List_Sidebar';
 import { DroneParking } from './components/Drone_Parking';
@@ -903,7 +903,7 @@ function App() {
             </div>
           ) : !hasStarted ? (
             <div className="flex-1 flex items-center justify-center">
-              <WelcomeScreen
+              <ShabloneScreen
                 onStart={handleStart}
                 templates={missionTemplates}
                 onStartCreateTemplate={startCreateTemplate}
