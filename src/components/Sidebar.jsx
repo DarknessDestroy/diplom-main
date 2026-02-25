@@ -19,11 +19,7 @@ export const Sidebar = ({
   onClearLogs,
   onDroneClick,
   isRouteEditMode = false,
-  onToggleRouteMode,
-  missionTemplates = [],
-  templateToApplyId = null,
-  onApplyTemplate,
-  onClearTemplateToApply
+  onToggleRouteMode
 }) => {
   const [activeTab, setActiveTab] = useState('control');
 
@@ -248,51 +244,6 @@ export const Sidebar = ({
                     </div>
                   </div>
                 </div>
-
-                {/* Применить шаблон миссии */}
-                {(templateToApplyId || missionTemplates.length > 0) && !selectedDrone.isFlying && (
-                  <div className="mb-4 p-3 bg-gray-700/80 rounded-lg border border-gray-600">
-                    <h4 className="font-semibold text-white mb-2">Шаблон маршрута</h4>
-                    {templateToApplyId && (() => {
-                      const tpl = missionTemplates.find(t => t.id === templateToApplyId);
-                      return tpl ? (
-                        <div className="flex flex-col gap-2">
-                          <p className="text-gray-300 text-sm">Выбран: <strong className="text-white">{tpl.name}</strong></p>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => onApplyTemplate(selectedDrone.id, templateToApplyId)}
-                              className="flex-1 py-2 bg-green-600 hover:bg-green-700 rounded text-sm font-medium"
-                            >
-                              Применить к {selectedDrone.name}
-                            </button>
-                            <button
-                              onClick={onClearTemplateToApply}
-                              className="px-3 py-2 bg-gray-600 hover:bg-gray-500 rounded text-sm"
-                            >
-                              Отмена
-                            </button>
-                          </div>
-                        </div>
-                      ) : null;
-                    })()}
-                    {!templateToApplyId && missionTemplates.length > 0 && (
-                      <p className="text-gray-400 text-xs mb-2">Загрузить сохранённый маршрут:</p>
-                    )}
-                    {!templateToApplyId && (
-                      <div className="flex flex-wrap gap-1">
-                        {missionTemplates.map((tpl) => (
-                          <button
-                            key={tpl.id}
-                            onClick={() => onApplyTemplate(selectedDrone.id, tpl.id)}
-                            className="px-2 py-1.5 bg-blue-600 hover:bg-blue-700 rounded text-xs font-medium"
-                          >
-                            {tpl.name} ({tpl.path?.length || 0})
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 {/* Управление маршрутом */}
                 <div className="space-y-2">

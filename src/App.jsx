@@ -981,10 +981,6 @@ function App() {
               onDroneClick={handleDroneClick}
               isRouteEditMode={isRouteEditMode}
               onToggleRouteMode={() => setIsRouteEditMode(prev => !prev)}
-              missionTemplates={missionTemplates}
-              templateToApplyId={templateToApplyId}
-              onApplyTemplate={applyTemplateToDrone}
-              onClearTemplateToApply={() => setTemplateToApplyId(null)}
             />
           </div>
         )}
