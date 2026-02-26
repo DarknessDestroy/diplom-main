@@ -16,7 +16,7 @@ import {
 } from './utils/flightCalculator';
 
 const VIEW_TRANSITION_MS = 300;
-const EXIT_PANELS_MS = 220;
+const EXIT_PANELS_MS = VIEW_TRANSITION_MS;
 
 function App() {
   const [hasStarted, setHasStarted] = useState(false);
@@ -771,12 +771,12 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-transparent text-white px-3 py-3">
+    <div className="flex flex-col h-screen overflow-hidden bg-transparent text-white px-3 py-3">
 
-      <div className="flex flex-1 gap-3 min-h-0">
+      <div className="flex flex-1 gap-3 min-h-0 overflow-hidden">
         {hasStarted && (
           <div
-            className={`flex-shrink-0 view-fade-in transition-all ease-in-out ${
+            className={`flex-shrink-0 transition-all ease-in-out ${
               exitingToTemplates ? 'opacity-0 pointer-events-none -translate-x-4' : 'opacity-100 translate-x-0'
             }`}
             style={{ transitionDuration: exitingToTemplates ? `${EXIT_PANELS_MS}ms` : `${VIEW_TRANSITION_MS}ms` }}
@@ -790,7 +790,7 @@ function App() {
                 setTimeout(() => {
                   setHasStarted(false);
                   setExitingToTemplates(false);
-                }, VIEW_TRANSITION_MS);
+                }, EXIT_PANELS_MS);
               }}
             />
           </div>
@@ -859,7 +859,7 @@ function App() {
             <div className="flex-1 relative min-h-0 overflow-hidden">
               <div
                 className={`absolute inset-0 flex items-center justify-center transition-all ease-in-out ${
-                  hasStarted && !exitingToTemplates ? 'opacity-0 pointer-events-none -translate-x-4' : 'opacity-100 translate-x-0'
+                  hasStarted ? 'opacity-0 pointer-events-none' : 'opacity-100'
                 }`}
                 style={{ transitionDuration: `${VIEW_TRANSITION_MS}ms` }}
               >
@@ -937,7 +937,7 @@ function App() {
 
         {hasStarted && (
           <div
-            className={`flex-shrink-0 view-fade-in transition-all ease-in-out ${
+            className={`flex-shrink-0 transition-all ease-in-out ${
               exitingToTemplates ? 'opacity-0 pointer-events-none translate-x-4' : 'opacity-100 translate-x-0'
             }`}
             style={{ transitionDuration: exitingToTemplates ? `${EXIT_PANELS_MS}ms` : `${VIEW_TRANSITION_MS}ms` }}
@@ -972,7 +972,12 @@ function App() {
       )}
 
       {hasStarted && (
-        <footer className="mt-2 bg-gradient-to-r from-gray-700 to-gray-800 p-3 rounded text-center text-white">
+        <footer
+          className={`mt-2 bg-gradient-to-r from-gray-700 to-gray-800 p-3 rounded text-center text-white transition-all ease-in-out ${
+            exitingToTemplates ? 'opacity-0 pointer-events-none translate-y-2' : 'opacity-100 translate-y-0'
+          }`}
+          style={{ transitionDuration: exitingToTemplates ? `${EXIT_PANELS_MS}ms` : `${VIEW_TRANSITION_MS}ms` }}
+        >
           <div className="md:flex-row justify-between items-center">
             <div>
               © 2026 Система управления дронами.
