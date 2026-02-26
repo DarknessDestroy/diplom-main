@@ -47,7 +47,7 @@ export function ShabloneScreen({
             <button
               type="button"
               onClick={() => onStart()}
-              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-medium transition-colors"
+              className="px-4 py-2 bg-black hover:bg-gray-900 text-white rounded-lg font-medium transition-colors"
             >
               Начать работу
             </button>
