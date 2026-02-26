@@ -87,8 +87,8 @@ export const Sidebar = ({
   }, [selectedDroneId, visibleDrones, onSelectDrone]);
 
   return (
-    <div className="w-80 bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col h-full">
-      <div className="bg-gradient-to-r from-gray-700 to-gray-800 p-4">
+    <div className="w-80 bg-gray-800/85 border border-gray-700/70 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col h-full">
+      <div className="bg-gradient-to-r from-gray-800 to-gray-900 p-4 border-b border-gray-700/80">
         <h2 className="text-xl font-bold text-white">Панель управления</h2>
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-2">
@@ -111,8 +111,8 @@ export const Sidebar = ({
       <div className="flex border-b border-gray-700">
         <button
           className={`flex-1 py-3 text-center font-medium transition-colors ${activeTab === 'control'
-            ? 'bg-gray-700 text-blue-400'
-            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            ? 'bg-gray-700/90 text-blue-300 border-b-2 border-blue-400'
+            : 'bg-gray-800/70 text-gray-400 hover:bg-gray-700/80 hover:text-gray-200'
             }`}
           onClick={() => setActiveTab('control')}
         >
@@ -120,8 +120,8 @@ export const Sidebar = ({
         </button>
         <button
           className={`flex-1 py-3 text-center font-medium transition-colors ${activeTab === 'logs'
-            ? 'bg-gray-700 text-blue-400'
-            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            ? 'bg-gray-700/90 text-blue-300 border-b-2 border-blue-400'
+            : 'bg-gray-800/70 text-gray-400 hover:bg-gray-700/80 hover:text-gray-200'
             }`}
           onClick={() => setActiveTab('logs')}
         >
@@ -152,8 +152,8 @@ export const Sidebar = ({
                   key={drone.id}
                   className={`p-3 rounded-lg cursor-pointer transition-all duration-200
                     ${selectedDroneId === drone.id 
-                      ? 'ring-2 ring-blue-400 bg-blue-900/30' 
-                      : 'bg-gray-900/50 hover:bg-gray-800/50'
+                      ? 'ring-2 ring-blue-300 border border-blue-500/40 bg-blue-900/35 shadow-sm'
+                      : 'bg-gray-900/45 border border-gray-700/60 hover:bg-gray-800/60 hover:border-gray-600'
                     }`}
                   onClick={() => onSelectDrone(drone.id)}
                 >

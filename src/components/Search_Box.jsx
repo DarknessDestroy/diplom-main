@@ -345,8 +345,8 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
                             if (query.length < 2 && history.length > 0) setShowHistory(true);
                         }}
                         placeholder="Поиск по адресу или месту"
-                        className="w-full p-3 pl-10 pr-10 rounded-l-lg border border-black 
-                                 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                        className="w-full p-3 pl-10 pr-10 rounded-l-xl border border-gray-600/80 bg-gray-900/90 text-gray-100 placeholder-gray-400 shadow-sm
+                                 focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-blue-400"
                         disabled={isLoading}
                         autoComplete="off"
                     />
@@ -354,7 +354,7 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
                     {/* Иконка поиска слева */}
                     <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
                         <svg
-                            className={`w-5 h-5 ${isLoading ? 'text-blue-500' : 'text-black'}`}
+                            className={`w-5 h-5 ${isLoading ? 'text-blue-400' : 'text-gray-400'}`}
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -372,8 +372,7 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
                     {query && (
                         <button
                             onClick={handleClear}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 
-                                     text-gray-400 hover:text-gray-600"
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300"
                             type="button"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -387,8 +386,9 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
                 <button
                     onClick={() => handleSearch()}
                     disabled={!query.trim() || isLoading}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed 
-                             text-white px-4 py-3 rounded-r-lg flex items-center gap-2"
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500
+                             disabled:from-blue-900 disabled:to-blue-800 disabled:text-gray-300 disabled:cursor-not-allowed
+                             text-white px-4 py-3 rounded-r-xl flex items-center gap-2 border border-blue-500/40 border-l-0 shadow-sm"
                 >
                     {isLoading ? (
                         <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
@@ -403,14 +403,14 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
 
             {/* История запросов */}
             {showHistory && history.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 
-                  rounded-lg shadow-lg z-[1010] max-h-64 overflow-y-auto">
-                    <div className="flex justify-between items-center px-3 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-                        <span className="text-xs font-medium text-black">История запросов</span>
+                <div className="absolute top-full left-0 right-0 mt-1.5 bg-gray-900/95 border border-gray-700
+                  rounded-xl shadow-2xl backdrop-blur-sm z-[1010] max-h-64 overflow-y-auto">
+                    <div className="flex justify-between items-center px-3 py-2 border-b border-gray-700 bg-gray-800/80 rounded-t-xl">
+                        <span className="text-xs font-medium text-gray-200">История запросов</span>
                         <button
                             type="button"
                             onClick={clearHistory}
-                            className="text-xs text-gray-400 hover:text-red-600"
+                            className="text-xs text-gray-400 hover:text-red-400"
                         >
                             Очистить
                         </button>
@@ -419,11 +419,11 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
                         <div
                             key={`${item}-${index}`}
                             onClick={() => handleHistorySelect(item)}
-                            className="w-full text-left p-3 hover:bg-gray-100 border-b border-gray-200 
+                            className="w-full text-left p-3 hover:bg-gray-800 border-b border-gray-700
                              last:border-b-0 flex items-center gap-2 cursor-pointer"
                         >
                             <span className="text-gray-400 text-sm">🕐</span>
-                            <span className="font-medium text-gray-800">{item}</span>
+                            <span className="font-medium text-gray-200">{item}</span>
                         </div>
                     ))}
                 </div>
@@ -431,22 +431,22 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
 
             {/* Всплывающие подсказки */}
             {showSuggestions && suggestions.length > 0 && !showHistory && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 
-                  rounded-lg shadow-lg z-[1010] max-h-64 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1.5 bg-gray-900/95 border border-gray-700
+                  rounded-xl shadow-2xl backdrop-blur-sm z-[1010] max-h-64 overflow-y-auto">
                     {suggestions.map((suggestion, index) => (
                         <div
                             key={index}
                             onClick={() => handleSuggestionSelect(suggestion)}
-                            className="w-full text-left p-3 hover:bg-gray-100 border-b border-gray-200 
+                            className="w-full text-left p-3 hover:bg-gray-800 border-b border-gray-700
                          last:border-b-0 flex items-start gap-3 cursor-pointer"
                             style={{ cursor: 'pointer' }}
                         >
                             <div>
-                                <div className="font-medium text-gray-800">
+                                <div className="font-medium text-gray-100">
                                     {suggestion.name || suggestion.value}
                                 </div>
                                 {suggestion.description && (
-                                    <div className="text-sm text-black mt-1">
+                                    <div className="text-sm text-gray-400 mt-1">
                                         {suggestion.description}
                                     </div>
                                 )}
@@ -462,16 +462,16 @@ export function SearchBox({ setMapCenter, setMapZoom }) {
                     <span className="text-yellow-600">Загрузка поискового сервиса Яндекс...</span>
                 )}
                 {ymapsReady && query.length === 0 && (
-                    <span className="text-black">Введите адрес для поиска</span>
+                    <span className="text-gray-300">Введите адрес для поиска</span>
                 )}
                 {ymapsReady && query.length === 1 && (
-                    <span className="text-black">Введите еще 1 символ для подсказок</span>
+                    <span className="text-gray-300">Введите еще 1 символ для подсказок</span>
                 )}
                 {ymapsReady && query.length >= 2 && suggestions.length === 0 && !isLoading && (
-                    <span className="text-black">Подсказок не найдено</span>
+                    <span className="text-gray-300">Подсказок не найдено</span>
                 )}
                 {ymapsReady && query.length >= 2 && suggestions.length > 0 && (
-                    <span className="text-black">Найдено {suggestions.length} подсказок</span>
+                    <span className="text-gray-300">Найдено {suggestions.length} подсказок</span>
                 )}
             </div>
         </div>
