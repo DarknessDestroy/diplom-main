@@ -40,6 +40,7 @@ function App() {
   const [templateEditMode, setTemplateEditMode] = useState(null);
   const [templateDraftPath, setTemplateDraftPath] = useState([]);
   const [templateDraftName, setTemplateDraftName] = useState('');
+  const [noTransitionTemplateSwitch, setNoTransitionTemplateSwitch] = useState(false);
 
   useEffect(() => {
     try {
@@ -48,6 +49,14 @@ function App() {
       console.warn('Failed to save mission templates', e);
     }
   }, [missionTemplates]);
+
+  useEffect(() => {
+    if (!noTransitionTemplateSwitch) return;
+    const id = requestAnimationFrame(() => {
+      setNoTransitionTemplateSwitch(false);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [noTransitionTemplateSwitch]);
 
   const addMissionTemplate = useCallback((template) => {
     const id = `tpl_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -75,6 +84,7 @@ function App() {
     setTemplateDraftName(t.name || '');
   }, [missionTemplates]);
   const cancelTemplateEdit = useCallback(() => {
+    setNoTransitionTemplateSwitch(true);
     setTemplateEditMode(null);
     setTemplateDraftPath([]);
     setTemplateDraftName('');
@@ -86,8 +96,11 @@ function App() {
     } else if (templateEditMode && templateEditMode.type === 'edit') {
       updateMissionTemplate(templateEditMode.id, { name, path: [...templateDraftPath] });
     }
-    cancelTemplateEdit();
-  }, [templateEditMode, templateDraftName, templateDraftPath, addMissionTemplate, updateMissionTemplate, cancelTemplateEdit]);
+    setNoTransitionTemplateSwitch(true);
+    setTemplateEditMode(null);
+    setTemplateDraftPath([]);
+    setTemplateDraftName('');
+  }, [templateEditMode, templateDraftName, templateDraftPath, addMissionTemplate, updateMissionTemplate]);
   const addTemplateDraftPoint = useCallback((latlng) => {
     setTemplateDraftPath((prev) => [...prev, [latlng.lat, latlng.lng]]);
   }, []);
@@ -861,7 +874,7 @@ function App() {
                 className={`absolute inset-0 flex items-center justify-center transition-all ease-in-out ${
                   hasStarted ? 'opacity-0 pointer-events-none' : 'opacity-100'
                 }`}
-                style={{ transitionDuration: `${VIEW_TRANSITION_MS}ms` }}
+                style={{ transitionDuration: noTransitionTemplateSwitch ? '0ms' : `${VIEW_TRANSITION_MS}ms` }}
               >
                 <ShabloneScreen
                   onStart={handleStart}
@@ -873,9 +886,9 @@ function App() {
               </div>
               <div
                 className={`absolute inset-0 flex flex-col min-h-0 transition-all ease-in-out ${
-                  hasStarted && !exitingToTemplates ? 'opacity-100 translate-x-0' : 'opacity-0 pointer-events-none translate-x-4'
+                  hasStarted && !exitingToTemplates ? 'opacity-100 translate-x-0' : 'opacity-0 pointer-events-none translate-x-full'
                 }`}
-                style={{ transitionDuration: `${VIEW_TRANSITION_MS}ms` }}
+                style={{ transitionDuration: noTransitionTemplateSwitch ? '0ms' : `${VIEW_TRANSITION_MS}ms` }}
               >
             <div className="w-full flex flex-col gap-2 flex-1 min-h-0">
               {placementMode && droneToPlace && (
@@ -971,7 +984,7 @@ function App() {
         />
       )}
 
-      {hasStarted && (
+      {false && hasStarted && (
         <footer
           className={`mt-2 bg-gradient-to-r from-gray-700 to-gray-800 p-3 rounded text-center text-white transition-all ease-in-out ${
             exitingToTemplates ? 'opacity-0 pointer-events-none translate-y-2' : 'opacity-100 translate-y-0'
