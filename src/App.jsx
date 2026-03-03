@@ -17,6 +17,8 @@ import {
 
 const VIEW_TRANSITION_MS = 300;
 const EXIT_PANELS_MS = VIEW_TRANSITION_MS;
+/** Минимальная дистанция (м): если дрон ближе к первой точке — перелёт до неё не добавляется */
+const FIRST_WAYPOINT_TRANSIT_THRESHOLD_M = 10;
 
 function App() {
   const [hasStarted, setHasStarted] = useState(false);
@@ -477,7 +479,26 @@ function App() {
       return;
     }
 
-    const missionParams = calculateMissionParameters(droneId);
+    const firstWaypoint = drone.path[0];
+    const needTransitToFirst =
+      drone.position &&
+      firstWaypoint &&
+      calculateDistance(
+        drone.position.lat,
+        drone.position.lng,
+        firstWaypoint[0],
+        firstWaypoint[1]
+      ) > FIRST_WAYPOINT_TRANSIT_THRESHOLD_M;
+
+    const flightPath = needTransitToFirst
+      ? [[drone.position.lat, drone.position.lng], ...drone.path]
+      : drone.path;
+
+    const missionParams = computeMissionParamsFromPath(
+      flightPath,
+      drone.maxSpeed,
+      drone.battery
+    );
     if (!missionParams) return;
 
     if (drone.battery < missionParams.batteryConsumption + 10) {
@@ -488,24 +509,27 @@ function App() {
       setIsRouteEditMode(false);
     }
 
+    const alreadyAtFirstPoint = !needTransitToFirst;
+
     setDrones(prev =>
       prev.map(d => {
         if (d.id !== droneId) return d;
         return {
           ...d,
-          flightStatus: flightStatus.TAKEOFF,
+          flightStatus: alreadyAtFirstPoint ? flightStatus.FLYING : flightStatus.TAKEOFF,
           isFlying: true,
+          altitude: alreadyAtFirstPoint ? 100 : 50,
           currentMission: {
             startTime: new Date().toISOString(),
             totalWaypoints: d.path.length,
             totalDistance: missionParams.totalDistance,
             estimatedTime: missionParams.estimatedTime,
-            missionParams
+            missionParams,
+            flightPath
           },
           currentWaypointIndex: 0,
           flightProgress: 0,
           speed: missionParams.optimalSpeed / 3.6,
-          altitude: 50,
           heading: 0,
           missionParameters: missionParams,
           missionStartTime: Date.now(),
@@ -519,21 +543,39 @@ function App() {
       totalDistance: missionParams.totalDistance,
       estimatedTime: missionParams.estimatedTime
     });
-    setTimeout(() => {
-      setDrones(prev =>
-        prev.map(d => {
-          if (d.id !== droneId) return d;
-          return {
-            ...d,
-            flightStatus: flightStatus.FLYING,
-            altitude: 100
-          };
-        })
+    if (needTransitToFirst) {
+      const transitDist = Math.round(
+        calculateDistance(
+          drone.position.lat,
+          drone.position.lng,
+          firstWaypoint[0],
+          firstWaypoint[1]
+        )
       );
+      addToDroneLog(droneId, '📍 Перелёт до первой точки миссии', {
+        distance: `${transitDist} м`
+      });
+    }
 
-      addToDroneLog(droneId, '🛫 Взлет выполнен', { altitude: 100 });
-      startFlightMovement(droneId);
-    }, 2000);
+    if (alreadyAtFirstPoint) {
+      addToDroneLog(droneId, '🛸 Дрон уже в воздухе — начало маршрута');
+      setTimeout(() => startFlightMovement(droneId), 0);
+    } else {
+      setTimeout(() => {
+        setDrones(prev =>
+          prev.map(d => {
+            if (d.id !== droneId) return d;
+            return {
+              ...d,
+              flightStatus: flightStatus.FLYING,
+              altitude: 100
+            };
+          })
+        );
+        addToDroneLog(droneId, '🛫 Взлет выполнен', { altitude: 100 });
+        startFlightMovement(droneId);
+      }, 2000);
+    }
   }, [drones, selectedDroneForSidebar, isRouteEditMode]);
 
   const startFlightMovement = (droneId) => {
@@ -588,17 +630,21 @@ function App() {
         return;
       }
 
-      const startPoint = currentDrone.path[currentSegment];
-      const endPoint = currentDrone.path[currentSegment + 1];
+      const pathForFlight = currentDrone.currentMission?.flightPath ?? currentDrone.path;
+      const startPoint = pathForFlight[currentSegment];
+      const endPoint = pathForFlight[currentSegment + 1];
 
       const currentLat = startPoint[0] + (endPoint[0] - startPoint[0]) * clampedProgress;
       const currentLng = startPoint[1] + (endPoint[1] - startPoint[1]) * clampedProgress;
 
+      const segmentCount = pathForFlight.length - 1;
       setDrones(prev =>
         prev.map(d => {
           if (d.id !== droneId) return d;
 
-          const totalProgress = ((currentSegment + clampedProgress) / (d.path.length - 1)) * 100;
+          const totalProgress = segmentCount > 0
+            ? ((currentSegment + clampedProgress) / segmentCount) * 100
+            : 100;
           const batteryDrain = (missionParams.batteryConsumption * elapsedTime) / missionParams.totalTime;
           const remainingBattery = Math.max(0, 100 - batteryDrain);
 
@@ -642,6 +688,36 @@ function App() {
       activeTimersRef.current.delete(droneId);
     }
 
+    const drone = dronesRef.current.find(d => d.id === droneId);
+    const isFlyToFirstOnly = drone?.currentMission?.flyToFirstOnly;
+
+    if (isFlyToFirstOnly) {
+      const flightPath = drone?.currentMission?.flightPath;
+      const lastPoint = flightPath?.length ? flightPath[flightPath.length - 1] : null;
+      setDrones(prev =>
+        prev.map(d => {
+          if (d.id !== droneId) return d;
+          return {
+            ...d,
+            flightStatus: flightStatus.IDLE,
+            isFlying: false,
+            status: 'на земле',
+            speed: 0,
+            altitude: 100,
+            position: lastPoint ? { lat: lastPoint[0], lng: lastPoint[1] } : d.position,
+            currentWaypointIndex: 0,
+            flightProgress: 0,
+            missionTimerId: null,
+            missionStartTime: null,
+            missionElapsedTime: 0,
+            currentMission: null
+          };
+        })
+      );
+      addToDroneLog(droneId, '📍 Дрон завис над первой точкой. Нажмите «Запустить миссию».');
+      return;
+    }
+
     setDrones(prev =>
       prev.map(d => {
         if (d.id !== droneId) return d;
@@ -660,6 +736,8 @@ function App() {
       setDrones(prev =>
         prev.map(d => {
           if (d.id !== droneId) return d;
+          const path = d.currentMission?.flightPath;
+          const lastPoint = path?.length ? path[path.length - 1] : null;
           return {
             ...d,
             flightStatus: flightStatus.COMPLETED,
@@ -667,6 +745,7 @@ function App() {
             status: 'на земле',
             speed: 0,
             altitude: 0,
+            position: lastPoint ? { lat: lastPoint[0], lng: lastPoint[1] } : d.position,
             currentWaypointIndex: 0,
             flightProgress: 100,
             missionTimerId: null,
@@ -756,6 +835,97 @@ function App() {
   const getActiveFlights = () => {
     return drones.filter(d => d.flightStatus === flightStatus.FLYING || d.flightStatus === flightStatus.TAKEOFF);
   };
+
+  const centerMapToFirstWaypoint = useCallback(() => {
+    if (selectedDroneForSidebar == null) return;
+    const drone = drones.find(d => d.id === selectedDroneForSidebar);
+    if (!drone?.path?.length) return;
+    const first = drone.path[0];
+    setMapCenter([first[0], first[1]]);
+  }, [drones, selectedDroneForSidebar]);
+
+  const flyDroneToFirstWaypoint = useCallback((droneId) => {
+    const drone = drones.find(d => d.id === droneId);
+    if (!drone?.path?.length) {
+      return;
+    }
+    if (drone.flightStatus === flightStatus.FLYING || drone.flightStatus === flightStatus.TAKEOFF || drone.flightStatus === flightStatus.LANDING) {
+      return;
+    }
+    const firstWaypoint = drone.path[0];
+    if (!drone.position) {
+      setDrones(prev =>
+        prev.map(d =>
+          d.id !== droneId ? d : { ...d, position: { lat: firstWaypoint[0], lng: firstWaypoint[1] } }
+        )
+      );
+      setMapCenter([firstWaypoint[0], firstWaypoint[1]]);
+      addToDroneLog(droneId, '📍 Дрон размещён на первой точке миссии');
+      return;
+    }
+    const distToFirst = calculateDistance(
+      drone.position.lat,
+      drone.position.lng,
+      firstWaypoint[0],
+      firstWaypoint[1]
+    );
+    if (distToFirst <= FIRST_WAYPOINT_TRANSIT_THRESHOLD_M) {
+      setDrones(prev =>
+        prev.map(d =>
+          d.id !== droneId ? d : { ...d, position: { lat: firstWaypoint[0], lng: firstWaypoint[1] } }
+        )
+      );
+      setMapCenter([firstWaypoint[0], firstWaypoint[1]]);
+      addToDroneLog(droneId, '📍 Дрон уже у первой точки миссии');
+      return;
+    }
+    const flightPath = [[drone.position.lat, drone.position.lng], [firstWaypoint[0], firstWaypoint[1]]];
+    const missionParams = computeMissionParamsFromPath(flightPath, drone.maxSpeed, drone.battery);
+    if (!missionParams || drone.battery < missionParams.batteryConsumption + 10) {
+      return;
+    }
+    setMapCenter([firstWaypoint[0], firstWaypoint[1]]);
+    setDrones(prev =>
+      prev.map(d => {
+        if (d.id !== droneId) return d;
+        return {
+          ...d,
+          flightStatus: flightStatus.TAKEOFF,
+          isFlying: true,
+          currentMission: {
+            startTime: new Date().toISOString(),
+            totalWaypoints: 1,
+            totalDistance: missionParams.totalDistance,
+            estimatedTime: missionParams.estimatedTime,
+            missionParams,
+            flightPath,
+            flyToFirstOnly: true
+          },
+          currentWaypointIndex: 0,
+          flightProgress: 0,
+          speed: missionParams.optimalSpeed / 3.6,
+          altitude: 50,
+          heading: 0,
+          missionParameters: missionParams,
+          missionStartTime: Date.now(),
+          missionElapsedTime: 0
+        };
+      })
+    );
+    addToDroneLog(droneId, '📍 Перелёт к первой точке миссии', {
+      distance: `${Math.round(distToFirst)} м`
+    });
+    setTimeout(() => {
+      setDrones(prev =>
+        prev.map(d => {
+          if (d.id !== droneId) return d;
+          return { ...d, flightStatus: flightStatus.FLYING, altitude: 100 };
+        })
+      );
+      addToDroneLog(droneId, '🛫 Взлёт выполнен');
+      startFlightMovement(droneId);
+    }, 2000);
+  }, [drones]);
 
   const stopAllFlights = () => {
     drones.forEach(drone => {
@@ -973,6 +1143,8 @@ function App() {
               onDroneClick={handleDroneClick}
               isRouteEditMode={isRouteEditMode}
               onToggleRouteMode={() => setIsRouteEditMode(prev => !prev)}
+              onCenterToFirstWaypoint={centerMapToFirstWaypoint}
+              onFlyToFirstWaypoint={flyDroneToFirstWaypoint}
             />
           </div>
         )}

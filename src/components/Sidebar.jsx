@@ -19,7 +19,9 @@ export const Sidebar = ({
   onClearLogs,
   onDroneClick,
   isRouteEditMode = false,
-  onToggleRouteMode
+  onToggleRouteMode,
+  onCenterToFirstWaypoint,
+  onFlyToFirstWaypoint
 }) => {
   const [activeTab, setActiveTab] = useState('control');
 
@@ -278,6 +280,17 @@ export const Sidebar = ({
                       )}
                     </>
                   )}
+                  <button
+                    onClick={() => onFlyToFirstWaypoint?.(selectedDrone.id)}
+                    disabled={!selectedDrone.path?.length || selectedDrone.isFlying}
+                    className={`w-full mt-2 py-2 rounded transition-colors flex items-center justify-center gap-2 ${selectedDrone.path?.length && !selectedDrone.isFlying
+                      ? 'bg-blue-600 hover:bg-blue-700'
+                      : 'bg-gray-700 cursor-not-allowed opacity-50'
+                      }`}
+                    title={selectedDrone.isFlying ? 'Дождитесь окончания полёта' : 'Перелететь к первой точке миссии и остановиться'}
+                  >
+                    📍 К первой точке миссии
+                  </button>
                   <div className="mt-4">
                     <h4 className="font-semibold text-white mb-2">Управление полетом</h4>
                     <div className="grid grid-cols-2 gap-2">
@@ -286,7 +299,7 @@ export const Sidebar = ({
                           onClick={() => onStartFlight(selectedDrone.id)}
                           className="col-span-2 bg-green-600 hover:bg-green-700 py-2 rounded flex items-center justify-center gap-2"
                         >
-                          🚀 Запустить дрона
+                          🚀 Начать миссию
                         </button>
                       )}
                       {selectedDroneStatus === flightStatus.FLYING && (
