@@ -10,6 +10,7 @@ export function YandexMap({
   mapCenter,
   mapZoom = 13,
   onMapClick,
+  onMapCenterChange,
   onDronePositionChange,
   placementMode = false,
   selectedDroneId = null,
@@ -349,6 +350,21 @@ export function YandexMap({
 
     return () => map.events.remove('click', handleClick);
   }, [onMapClick, mapLoaded]);
+
+  useEffect(() => {
+    if (!mapLoaded || !mapInstanceRef.current || typeof onMapCenterChange !== 'function') return;
+
+    const map = mapInstanceRef.current;
+    const handleMoveEnd = () => {
+      const center = map.getCenter();
+      if (center && Array.isArray(center) && center.length >= 2) {
+        onMapCenterChange([center[0], center[1]]);
+      }
+    };
+
+    map.events.add('actionend', handleMoveEnd);
+    return () => map.events.remove('actionend', handleMoveEnd);
+  }, [onMapCenterChange, mapLoaded]);
 
   useEffect(() => {
     if (!mapLoaded || !mapInstanceRef.current || !mapContainerRef.current) return;

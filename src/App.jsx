@@ -1106,6 +1106,7 @@ function App() {
                   mapCenter={mapCenter}
                   mapZoom={mapZoom}
                   onMapClick={handleMapClick}
+                  onMapCenterChange={setMapCenter}
                   selectedDroneId={selectedDroneForSidebar}
                   forceResize={true}
                   routeEditMode={isRouteEditMode}
