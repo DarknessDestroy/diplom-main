@@ -36,7 +36,35 @@ const weatherLabel = (code) => {
 
 const PANEL_DURATION_MS = 220;
 
-export function WeatherWidget({ latitude, longitude, className = '' }) {
+// Пороги для полётов дронов (ветер в км/ч, коды погоды WMO)
+const WIND_KMH_DANGER = 40;   // сильный ветер — взлёт запрещён
+const WIND_KMH_WARNING = 25;  // умеренный ветер — не рекомендуется
+const PRECIPITATION_CODES = [51, 53, 55, 61, 63, 65, 71, 73, 75, 77, 80, 81, 82, 85, 86, 95, 96, 99];
+const FOG_CODES = [45, 48];
+
+function getFlightConditions(data) {
+  if (!data) return { safe: true, status: 'ok', reasons: [] };
+  const reasons = [];
+  const windSpeed = data.wind_speed_10m != null ? Number(data.wind_speed_10m) : 0;
+  const code = data.weather_code != null ? Number(data.weather_code) : 0;
+
+  if (windSpeed >= WIND_KMH_DANGER) reasons.push('Сильный ветер');
+  else if (windSpeed >= WIND_KMH_WARNING) reasons.push('Умеренный ветер');
+
+  if (PRECIPITATION_CODES.includes(code)) reasons.push('Осадки (дождь/снег/гроза)');
+  if (FOG_CODES.includes(code)) reasons.push('Туман');
+
+  const isDanger = windSpeed >= WIND_KMH_DANGER || PRECIPITATION_CODES.includes(code);
+  const isWarning = reasons.length > 0 && !isDanger;
+
+  return {
+    safe: !isDanger,
+    status: isDanger ? 'danger' : isWarning ? 'warning' : 'ok',
+    reasons
+  };
+}
+
+export function WeatherWidget({ latitude, longitude, className = '', onFlightConditionsChange }) {
   const [expanded, setExpanded] = useState(false);
   const [closing, setClosing] = useState(false);
   const [panelVisible, setPanelVisible] = useState(false);
@@ -88,7 +116,8 @@ export function WeatherWidget({ latitude, longitude, className = '' }) {
       const res = await fetch(`${OPEN_METEO_URL}?${params}`);
       if (!res.ok) throw new Error('Ошибка запроса погоды');
       const json = await res.json();
-      setData(json.current ? { ...json.current, time: json.current?.time } : null);
+      const current = json.current ? { ...json.current, time: json.current?.time } : null;
+      setData(current);
     } catch (e) {
       setError(e.message || 'Не удалось загрузить погоду');
       setData(null);
@@ -96,6 +125,13 @@ export function WeatherWidget({ latitude, longitude, className = '' }) {
       setLoading(false);
     }
   }, [latitude, longitude]);
+
+  useEffect(() => {
+    const conditions = getFlightConditions(data);
+    if (typeof onFlightConditionsChange === 'function') onFlightConditionsChange(conditions);
+  }, [data, onFlightConditionsChange]);
+
+  const flightConditions = getFlightConditions(data);
 
   useEffect(() => {
     fetchWeather();
@@ -138,6 +174,8 @@ export function WeatherWidget({ latitude, longitude, className = '' }) {
           <span className="text-red-400 text-sm" title={error}>Ошибка</span>
         ) : (
           <>
+            {flightConditions.status === 'danger' && <span className="text-amber-400" title="Неблагоприятные условия для полёта">⚠️</span>}
+            {flightConditions.status === 'warning' && flightConditions.status !== 'danger' && <span className="text-yellow-400" title="Внимание: погода">⚡</span>}
             <span className="text-xl leading-none">{w.icon}</span>
             <span className="text-white font-semibold tabular-nums">{temp}°</span>
             <span className="text-gray-400 text-xs hidden sm:inline">{w.short}</span>
@@ -155,6 +193,16 @@ export function WeatherWidget({ latitude, longitude, className = '' }) {
           <div className="flex justify-between items-center mb-3">
             <span className="text-sm font-semibold text-white">Погода</span>
           </div>
+          {flightConditions.status !== 'ok' && data && (
+            <div className={`mb-3 px-3 py-2 rounded-lg text-sm ${flightConditions.status === 'danger' ? 'bg-amber-900/40 border border-amber-600 text-amber-200' : 'bg-yellow-900/30 border border-yellow-600 text-yellow-200'}`}>
+              <div className="font-semibold">
+                {flightConditions.status === 'danger' ? '⚠️ Неблагоприятные условия для полёта' : '⚡ Внимание: погода'}
+              </div>
+              <ul className="mt-1 list-disc list-inside text-xs opacity-90">
+                {flightConditions.reasons.map((r, i) => <li key={i}>{r}</li>)}
+              </ul>
+            </div>
+          )}
           {error && (
             <p className="text-red-400 text-sm mb-2">{error}</p>
           )}

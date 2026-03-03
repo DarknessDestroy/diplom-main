@@ -194,7 +194,14 @@ function App() {
   const [selectedDroneForModal, setSelectedDroneForModal] = useState(null);
   const [mapZoom, setMapZoom] = useState(13);
   const [globalMissionLog, setGlobalMissionLog] = useState([]);
+  const [weatherFlightSafe, setWeatherFlightSafe] = useState(true);
+  const [weatherFlightReasons, setWeatherFlightReasons] = useState([]);
   const activeTimersRef = useRef(new Map());
+
+  const handleWeatherFlightConditions = useCallback((conditions) => {
+    setWeatherFlightSafe(conditions.safe);
+    setWeatherFlightReasons(conditions.reasons || []);
+  }, []);
 
   const [placementMode, setPlacementMode] = useState(false);
   const [droneToPlace, setDroneToPlace] = useState(null);
@@ -1098,6 +1105,7 @@ function App() {
                     <WeatherWidget
                       latitude={mapCenter[0]}
                       longitude={mapCenter[1]}
+                      onFlightConditionsChange={handleWeatherFlightConditions}
                     />
                   </div>
                 </div>
@@ -1146,6 +1154,8 @@ function App() {
               onToggleRouteMode={() => setIsRouteEditMode(prev => !prev)}
               onCenterToFirstWaypoint={centerMapToFirstWaypoint}
               onFlyToFirstWaypoint={flyDroneToFirstWaypoint}
+              flightAllowedByWeather={weatherFlightSafe}
+              weatherFlightReasons={weatherFlightReasons}
             />
           </div>
         )}

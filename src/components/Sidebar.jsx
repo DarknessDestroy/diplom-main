@@ -21,7 +21,9 @@ export const Sidebar = ({
   isRouteEditMode = false,
   onToggleRouteMode,
   onCenterToFirstWaypoint,
-  onFlyToFirstWaypoint
+  onFlyToFirstWaypoint,
+  flightAllowedByWeather = true,
+  weatherFlightReasons = []
 }) => {
   const [activeTab, setActiveTab] = useState('control');
 
@@ -291,6 +293,11 @@ export const Sidebar = ({
                   >
                     📍 К первой точке миссии
                   </button>
+                  {!flightAllowedByWeather && weatherFlightReasons.length > 0 && (
+                    <div className="mt-2 px-3 py-2 rounded-lg bg-amber-900/40 border border-amber-600 text-amber-200 text-xs">
+                      ⚠️ Неблагоприятные условия для полёта: {weatherFlightReasons.join(', ')}
+                    </div>
+                  )}
                   <div className="mt-4">
                     <h4 className="font-semibold text-white mb-2">Управление полетом</h4>
                     <div className="grid grid-cols-2 gap-2">
