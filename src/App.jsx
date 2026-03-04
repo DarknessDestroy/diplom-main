@@ -1166,7 +1166,7 @@ function App() {
                   className="min-h-[48px] flex-1 min-w-0 px-3 py-3 bg-amber-600 hover:bg-amber-500 rounded-xl shadow-lg text-white font-medium flex items-center justify-center gap-1.5"
                 >
                   <span>←</span>
-                  <span className="truncate">К шаблонам</span>
+                  <span className="truncate">Назад</span>
                 </button>
                 <button
                   type="button"
