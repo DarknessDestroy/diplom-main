@@ -207,6 +207,8 @@ function App() {
   const [droneToPlace, setDroneToPlace] = useState(null);
   const [isRouteEditMode, setIsRouteEditMode] = useState(false);
   const [selectedDroneForSidebar, setSelectedDroneForSidebar] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [parkingOpen, setParkingOpen] = useState(false);
 
   useEffect(() => {
     if (!templateToApplyId || selectedDroneForSidebar == null) return;
@@ -961,15 +963,28 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-transparent text-white px-3 py-3">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden bg-transparent text-white px-2 sm:px-3 py-2 sm:py-3">
 
-      <div className="flex flex-1 gap-3 min-h-0 overflow-hidden">
+      {/* Backdrop for mobile overlays */}
+      {(sidebarOpen || parkingOpen) && (
+        <button
+          type="button"
+          aria-label="Закрыть"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => { setSidebarOpen(false); setParkingOpen(false); }}
+        />
+      )}
+
+      <div className="flex flex-1 gap-2 lg:gap-3 min-h-0 overflow-hidden flex-col lg:flex-row">
         {hasStarted && (
           <div
-            className={`flex-shrink-0 transition-all ease-in-out ${
-              exitingToTemplates ? 'opacity-0 pointer-events-none -translate-x-4' : 'opacity-100 translate-x-0'
-            }`}
-            style={{ transitionDuration: exitingToTemplates ? `${EXIT_PANELS_MS}ms` : `${VIEW_TRANSITION_MS}ms` }}
+            className={`fixed left-0 top-0 bottom-0 z-50 w-[85%] max-w-sm transform transition-transform duration-300 ease-out lg:relative lg:translate-x-0 lg:w-72 lg:max-w-none lg:flex-shrink-0 ${
+              exitingToTemplates ? 'opacity-0 pointer-events-none -translate-x-full' : ''
+            } ${parkingOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+            style={{
+              transitionDuration: exitingToTemplates ? `${EXIT_PANELS_MS}ms` : undefined,
+              paddingTop: 'env(safe-area-inset-top, 0px)',
+            }}
           >
             <DroneParking
               drones={drones}
@@ -977,15 +992,17 @@ function App() {
               onRemoveDrone={removeDroneFromMap}
               onBackToTemplates={() => {
                 setExitingToTemplates(true);
+                setParkingOpen(false);
                 setTimeout(() => {
                   setHasStarted(false);
                   setExitingToTemplates(false);
                 }, EXIT_PANELS_MS);
               }}
+              onClose={() => setParkingOpen(false)}
             />
           </div>
         )}
-        <main className="flex-1 bg-transparent p-3 rounded flex flex-col min-w-0 min-h-0">
+        <main className="flex-1 bg-transparent p-2 sm:p-3 rounded flex flex-col min-w-0 min-h-0">
           {templateEditMode ? (
             <div className="flex-1 flex flex-col min-h-0 relative">
               <div className="flex-1 min-h-0">
@@ -1121,6 +1138,45 @@ function App() {
                   previewPath={templateToApplyId ? (missionTemplates.find(t => t.id === templateToApplyId)?.path) ?? null : null}
                 />
               </div>
+
+              {/* Кнопки управления под картой (мобильные), в потоке — карта сжимается */}
+              <div
+                className="flex-shrink-0 flex justify-between items-center gap-2 lg:hidden pt-2"
+                style={{ paddingBottom: 'env(safe-area-inset-bottom, 0.5rem)' }}
+              >
+                <button
+                  type="button"
+                  onClick={() => { setParkingOpen(true); setSidebarOpen(false); }}
+                  className="min-h-[48px] flex-1 min-w-0 px-3 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-xl shadow-lg text-white font-medium flex items-center justify-center gap-1.5"
+                >
+                  <span>🛸</span>
+                  <span>Стоянка</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExitingToTemplates(true);
+                    setParkingOpen(false);
+                    setSidebarOpen(false);
+                    setTimeout(() => {
+                      setHasStarted(false);
+                      setExitingToTemplates(false);
+                    }, EXIT_PANELS_MS);
+                  }}
+                  className="min-h-[48px] flex-1 min-w-0 px-3 py-3 bg-amber-600 hover:bg-amber-500 rounded-xl shadow-lg text-white font-medium flex items-center justify-center gap-1.5"
+                >
+                  <span>←</span>
+                  <span className="truncate">К шаблонам</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSidebarOpen(true); setParkingOpen(false); }}
+                  className="min-h-[48px] flex-1 min-w-0 px-3 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl shadow-lg text-white font-medium flex items-center justify-center gap-1.5"
+                >
+                  <span>⚙️</span>
+                  <span>Панель</span>
+                </button>
+              </div>
             </div>
               </div>
             </div>
@@ -1129,10 +1185,13 @@ function App() {
 
         {hasStarted && (
           <div
-            className={`flex-shrink-0 transition-all ease-in-out ${
-              exitingToTemplates ? 'opacity-0 pointer-events-none translate-x-4' : 'opacity-100 translate-x-0'
-            }`}
-            style={{ transitionDuration: exitingToTemplates ? `${EXIT_PANELS_MS}ms` : `${VIEW_TRANSITION_MS}ms` }}
+            className={`fixed right-0 top-0 bottom-0 z-50 w-[85%] max-w-sm transform transition-transform duration-300 ease-out lg:relative lg:translate-x-0 lg:w-80 lg:max-w-none lg:flex-shrink-0 ${
+              exitingToTemplates ? 'opacity-0 pointer-events-none translate-x-full' : ''
+            } ${sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}
+            style={{
+              transitionDuration: exitingToTemplates ? `${EXIT_PANELS_MS}ms` : undefined,
+              paddingTop: 'env(safe-area-inset-top, 0px)',
+            }}
           >
             <Sidebar
               dronesData={drones}
@@ -1156,10 +1215,12 @@ function App() {
               onFlyToFirstWaypoint={flyDroneToFirstWaypoint}
               flightAllowedByWeather={weatherFlightSafe}
               weatherFlightReasons={weatherFlightReasons}
+              onClose={() => setSidebarOpen(false)}
             />
           </div>
         )}
       </div>
+
       {selectedDroneForModal && (
         <DroneModal
           drone={selectedDroneForModal}

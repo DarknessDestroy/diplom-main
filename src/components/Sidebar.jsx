@@ -23,7 +23,8 @@ export const Sidebar = ({
   onCenterToFirstWaypoint,
   onFlyToFirstWaypoint,
   flightAllowedByWeather = true,
-  weatherFlightReasons = []
+  weatherFlightReasons = [],
+  onClose
 }) => {
   const [activeTab, setActiveTab] = useState('control');
 
@@ -91,9 +92,23 @@ export const Sidebar = ({
   }, [selectedDroneId, visibleDrones, onSelectDrone]);
 
   return (
-    <div className="w-80 bg-gray-800/85 border border-gray-700/70 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col h-full">
+    <div className="w-full lg:w-80 bg-gray-800/95 lg:bg-gray-800/85 border border-gray-700/70 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col h-full">
       <div className="bg-gradient-to-r from-gray-800 to-gray-900 p-4 border-b border-gray-700/80">
-        <h2 className="text-xl font-bold text-white">Панель управления</h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-xl font-bold text-white">Панель управления</h2>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Закрыть"
+              className="lg:hidden min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-700"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
         <div className="flex items-center justify-between mt-2">
           <div className="flex items-center gap-2">
             <div className="bg-green-500 rounded-full w-2 h-2 animate-pulse"></div>
@@ -104,7 +119,7 @@ export const Sidebar = ({
           {flyingDrones.length > 0 && (
             <button
               onClick={onStopAllFlights}
-              className="text-xs bg-red-600 hover:bg-red-700 px-2 py-1 rounded transition-colors"
+              className="text-xs bg-red-600 hover:bg-red-700 px-2 py-1 rounded transition-colors min-h-[44px] flex items-center"
               title="Остановить все полеты"
             >
               Стоп все
@@ -114,7 +129,7 @@ export const Sidebar = ({
       </div>
       <div className="flex border-b border-gray-700">
         <button
-          className={`flex-1 py-3 text-center font-medium transition-colors ${activeTab === 'control'
+          className={`flex-1 py-3 min-h-[44px] text-center font-medium transition-colors ${activeTab === 'control'
             ? 'bg-gray-700/90 text-blue-300 border-b-2 border-blue-400'
             : 'bg-gray-800/70 text-gray-400 hover:bg-gray-700/80 hover:text-gray-200'
             }`}
@@ -123,7 +138,7 @@ export const Sidebar = ({
           Управление
         </button>
         <button
-          className={`flex-1 py-3 text-center font-medium transition-colors ${activeTab === 'logs'
+          className={`flex-1 py-3 min-h-[44px] text-center font-medium transition-colors ${activeTab === 'logs'
             ? 'bg-gray-700/90 text-blue-300 border-b-2 border-blue-400'
             : 'bg-gray-800/70 text-gray-400 hover:bg-gray-700/80 hover:text-gray-200'
             }`}
@@ -233,7 +248,7 @@ export const Sidebar = ({
                       <div className="flex gap-2 mb-3">
                         <button
                           onClick={onToggleRouteMode}
-                          className={`flex-1 py-2 rounded transition-colors ${isRouteEditMode
+                          className={`flex-1 py-2 min-h-[44px] rounded transition-colors ${isRouteEditMode
                             ? 'bg-blue-600 hover:bg-blue-700'
                             : 'bg-gray-700 hover:bg-gray-600'
                             }`}
@@ -242,7 +257,7 @@ export const Sidebar = ({
                         </button>
                         <button
                           onClick={() => onDroneClick(selectedDrone)}
-                          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded transition-colors"
+                          className="px-4 py-2 min-h-[44px] bg-purple-600 hover:bg-purple-700 rounded transition-colors"
                           title="Подробности"
                         >
                           ℹ️
@@ -285,7 +300,7 @@ export const Sidebar = ({
                   <button
                     onClick={() => onFlyToFirstWaypoint?.(selectedDrone.id)}
                     disabled={!selectedDrone.path?.length || selectedDrone.isFlying}
-                    className={`w-full mt-2 py-2 rounded transition-colors flex items-center justify-center gap-2 ${selectedDrone.path?.length && !selectedDrone.isFlying
+                    className={`w-full mt-2 py-2 min-h-[44px] rounded transition-colors flex items-center justify-center gap-2 ${selectedDrone.path?.length && !selectedDrone.isFlying
                       ? 'bg-blue-600 hover:bg-blue-700'
                       : 'bg-gray-700 cursor-not-allowed opacity-50'
                       }`}
@@ -304,7 +319,7 @@ export const Sidebar = ({
                       {selectedDroneStatus === flightStatus.IDLE && selectedDronePathLength >= 2 && (
                         <button
                           onClick={() => onStartFlight(selectedDrone.id)}
-                          className="col-span-2 bg-green-600 hover:bg-green-700 py-2 rounded flex items-center justify-center gap-2"
+                          className="col-span-2 bg-green-600 hover:bg-green-700 py-2 min-h-[44px] rounded flex items-center justify-center gap-2"
                         >
                           🚀 Начать миссию
                         </button>

@@ -4,7 +4,8 @@ export const DroneParking = ({
   drones = [], 
   onPlaceDrone,
   onRemoveDrone,
-  onBackToTemplates
+  onBackToTemplates,
+  onClose
 }) => {
   const placedDrones = drones.filter(d => d.isVisible);
   const availableDrones = drones.filter(d => !d.isVisible);
@@ -68,8 +69,20 @@ export const DroneParking = ({
     <div className="flex flex-shrink-0 w-72">
       <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden h-full flex flex-col w-full">
         <div className="bg-gradient-to-r from-gray-700 to-gray-800 p-4">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-2">
             <h2 className="text-xl font-bold text-white">Стоянка для дронов</h2>
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Закрыть"
+                className="lg:hidden min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-2 mt-2">
                 <div className="bg-green-500 rounded-full w-2 h-2"></div>
@@ -150,7 +163,7 @@ export const DroneParking = ({
                           </div>
                           <button
                             onClick={() => onPlaceDrone(drone.id)}
-                            className="bg-green-600 hover:bg-green-700 text-white px-1 py-1 rounded text-sm transition-colors hover:scale-105"
+                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 min-h-[44px] rounded text-sm transition-colors hover:scale-105 flex items-center"
                             title="Разместить дрон на карте"
                           >
                             Разместить
@@ -170,7 +183,7 @@ export const DroneParking = ({
               )}
             </div>
             {onBackToTemplates && (
-              <div className="flex-shrink-0 p-4 pt-2 border-t border-gray-700">
+              <div className="flex-shrink-0 p-4 pt-2 border-t border-gray-700 hidden lg:block">
                 <button
                   type="button"
                   onClick={onBackToTemplates}
